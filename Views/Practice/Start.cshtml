@@ -1,0 +1,80 @@
+﻿@model IEnumerable<PracticeLogger.Models.PracticeEntry>
+
+@{
+    Func<int, string> intensityLabel = i => i switch
+    {
+        1 => "1",
+        2 => "2",
+        3 => "3",
+        4 => "4",
+        5 => "5",
+        _ => "-"
+    };
+
+    Func<int, string> intensityClass = i => i switch
+    {
+        1 => "badge bg-success",
+        2 => "badge bg-info text-dark",
+        3 => "badge bg-warning text-dark",
+        4 => "badge bg-secondary text-dark",
+        5 => "badge bg-danger",
+        _ => "badge bg-secondary"
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center">
+    <h2>Övningslogg – vecka @ViewBag.Week</h2>
+    <div class="btn-group">
+        <a asp-action="Create" class="btn btn-primary">➕ Lägg till pass</a>
+        <a asp-action="Summary" class="btn btn-outline-secondary">📊 Summering</a>
+    </div>
+</div>
+
+@if (ViewData["Flash"] != null)
+{
+    <div class="alert alert-success mt-3">@ViewData["Flash"]</div>
+}
+
+@if (ViewBag.LastInstrument != null)
+{
+    <p class="mt-2">
+        <span class="badge bg-info text-dark">
+            Senast valt instrument: @ViewBag.LastInstrument
+        </span>
+    </p>
+}
+
+@if (!Model.Any())
+{
+    <p class="mt-3 text-muted">Inga poster ännu. Klicka <strong>”Lägg till pass”</strong> för att börja logga.</p>
+}
+else
+{
+    <table class="table table-bordered table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Instrument</th>
+                <th>Minuter</th>
+                <th>Fokus</th>
+                <th>Intensitet</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model.OrderByDescending(e => e.Date))
+            {
+                <tr>
+                    <td>@entry.Date.ToString("yyyy-MM-dd")</td>
+                    <td>@entry.Instrument</td>
+                    <td>@entry.Minutes</td>
+                    <td>@entry.Focus</td>
+                    <td>
+                        <span class="@intensityClass(entry.Intensity)">
+                            @intensityLabel(entry.Intensity)
+                        </span>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

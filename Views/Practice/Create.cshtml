@@ -1,0 +1,47 @@
+﻿@model PracticeLogger.Models.PracticeEntry
+@{
+    ViewBag.Title = "Lägg till övningspass";
+}
+
+<h2>@ViewBag.Title</h2>
+<p class="text-muted">Fält markerade med * är obligatoriska.</p>
+
+<form asp-action="Create" method="post" class="mt-3">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="mb-3">
+        <label asp-for="Instrument" class="form-label">Instrument *</label>
+        <input asp-for="Instrument" class="form-control" />
+        <span asp-validation-for="Instrument" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Minutes" class="form-label">Minuter *</label>
+        <input asp-for="Minutes" type="number" class="form-control" />
+        <span asp-validation-for="Minutes" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Focus" class="form-label">Fokus *</label>
+        <input asp-for="Focus" class="form-control" />
+        <span asp-validation-for="Focus" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Intensity" class="form-label"></label>
+        <input asp-for="Intensity" type="range" min="1" max="5" class="form-range" />
+        <span asp-validation-for="Intensity" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Date" class="form-label">Datum</label>
+        <input asp-for="Date" type="date" class="form-control" />
+        <span asp-validation-for="Date" class="text-danger"></span>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Spara</button>
+    <a asp-action="Start" class="btn btn-secondary ms-2">Avbryt</a>
+</form>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}
