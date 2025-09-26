@@ -25,6 +25,4 @@ namespace PracticeLogger.Models
         public string? Comment { get; set; }
     }
 
-    public class Instrument { public int InstrumentId { get; set; } public string Name { get; set; } = ""; }
-
 }
