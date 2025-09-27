@@ -1,4 +1,6 @@
 // Create a builder for the web application.
+using PracticeLogger.DAL;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services for controllers with views (MVC pattern).
@@ -6,6 +8,10 @@ builder.Services.AddControllersWithViews();
 
 // Add session services to enable session variables.
 builder.Services.AddSession();   // Important for session variables
+
+builder.Services.AddScoped<IPracticeSessionRepository, PracticeSessionRepository>();
+builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
+
 
 // Build the web application.
 var app = builder.Build();
