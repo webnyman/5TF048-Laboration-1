@@ -1,10 +1,12 @@
 ﻿@model PracticeSession
 @{
-    ViewData["Title"] = "Nytt övningspass";
+    ViewData["Title"] = "Redigera övningspass";
 }
-<h2>Nytt övningspass</h2>
+<h2>Redigera övningspass</h2>
 
-<form asp-action="Create" method="post" class="row g-3">
+<form asp-action="Edit" method="post" class="row g-3">
+    <input type="hidden" asp-for="SessionId" />
+
     <div class="col-md-3">
         <label asp-for="PracticeDate" class="form-label"></label>
         <input asp-for="PracticeDate" class="form-control" />
@@ -43,7 +45,7 @@
 
     <div class="col-12">
         <button type="submit" class="btn btn-primary">Spara</button>
-        <a asp-action="Index" class="btn btn-secondary">Avbryt</a>
+        <a asp-action="Index" class="btn btn-secondary">Tillbaka</a>
     </div>
 </form>
 

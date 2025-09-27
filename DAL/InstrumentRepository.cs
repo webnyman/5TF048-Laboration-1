@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
+using PracticeLogger.Models;
 
 public class InstrumentRepository : IInstrumentRepository
 {
