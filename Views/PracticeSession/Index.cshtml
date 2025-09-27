@@ -1,0 +1,80 @@
+﻿@model IEnumerable<PracticeSessionListItem>
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Övningspass";
+    string q = ViewBag.Query as string ?? "";
+    string sort = ViewBag.Sort as string ?? "date";
+    bool desc = ViewBag.Desc is bool b && b;
+    int total = ViewBag.Total is int t ? t : Model.Count();
+    var instrumentIdValue = Context.Request.Query["instrumentId"].ToString();
+
+    Func<string, string> sortLink = s =>
+        Url.Action("Index", new { q, instrumentId = instrumentIdValue, sort = s, desc = (sort == s ? !desc : false) }) ?? string.Empty;
+}
+
+<h2>Övningspass</h2>
+
+@if (TempData["Flash"] is string flash)
+{
+    <div class="alert alert-success">@flash</div>
+}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-4">
+        <input class="form-control" type="text" name="q" value="@q" placeholder="Sök i fokus..." />
+    </div>
+    <div class="col-md-4">
+        <select class="form-select" name="instrumentId" asp-items="@(ViewBag.Instruments as SelectList)">
+            <option value="">Alla instrument</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <button class="btn btn-primary" type="submit">Filtrera</button>
+        <a class="btn btn-secondary" href="@Url.Action("Index", "PracticeSession")">Nollställ</a>
+        <a class="btn btn-success" asp-action="Create">+ Lägg till pass</a>
+    </div>
+</form>
+
+<p>
+    Sortera:
+    <a href="@sortLink("date")">Datum @(sort == "date" ? (desc ? "▼" : "▲") : "")</a> |
+    <a href="@sortLink("minutes")">Minuter @(sort == "minutes" ? (desc ? "▼" : "▲") : "")</a> |
+    <a href="@sortLink("intensity")">Intensitet @(sort == "intensity" ? (desc ? "▼" : "▲") : "")</a>
+</p>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Datum</th>
+            <th>Instrument</th>
+            <th>Min</th>
+            <th>Int</th>
+            <th>Fokus</th>
+            <th style="width:160px;"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Model)
+        {
+            <tr>
+                <td>@s.PracticeDate.ToString("yyyy-MM-dd")</td>
+                <td>@s.InstrumentName</td>
+                <td>@s.Minutes</td>
+                <td>@s.Intensity</td>
+                <td>@s.Focus</td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@s.SessionId">Redigera</a>
+                    <form asp-action="Delete" asp-route-id="@s.SessionId" method="post" class="d-inline">
+                        <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Ta bort passet?')">Ta bort</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (total == 0)
+{
+    <p><em>Inga träffar.</em></p>
+}

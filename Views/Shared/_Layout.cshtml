@@ -12,25 +12,38 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="nav-link text-dark" asp-controller="Practice" asp-action="Start">📓 Övningslogg</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                <a class="navbar-brand text-dark" asp-controller="PracticeSession" asp-action="Index">📓 PracticeLogger</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
+                        <!-- Databasdriven CRUD -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Practice" asp-action="Create">➕ Lägg till pass</a>
+                            <a class="nav-link text-dark" asp-controller="PracticeSession" asp-action="Create">➕ Lägg till pass</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Practice" asp-action="Summary">📊 Summering</a>
+                            <a class="nav-link text-dark" asp-controller="PracticeSession" asp-action="Index">📋 Alla pass</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Instrument" asp-action="Index">🎺 Instrument</a>
+                        </li>
+
+                        <!-- Lab1 (sessionbaserad) -->
+                        <li class="nav-item ms-3">
+                            <a class="nav-link text-muted" asp-controller="Practice" asp-action="Start">🧪 Lab1: Start</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-muted" asp-controller="Practice" asp-action="Summary">🧪 Lab1: Summering</a>
                         </li>
                     </ul>
-
                 </div>
             </div>
         </nav>
     </header>
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()

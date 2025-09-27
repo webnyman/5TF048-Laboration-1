@@ -1,0 +1,54 @@
+﻿@model PracticeSession
+@{
+    ViewData["Title"] = "Redigera övningspass";
+}
+<h2>Redigera övningspass</h2>
+
+<form asp-action="Edit" method="post" class="row g-3">
+    <input type="hidden" asp-for="SessionId" />
+
+    <div class="col-md-3">
+        <label asp-for="PracticeDate" class="form-label"></label>
+        <input asp-for="PracticeDate" class="form-control" />
+        <span asp-validation-for="PracticeDate" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label for="InstrumentId" class="form-label">Instrument</label>
+        <select asp-for="InstrumentId" asp-items="@(ViewBag.Instruments)" class="form-select"></select>
+        <span asp-validation-for="InstrumentId" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-2">
+        <label asp-for="Minutes" class="form-label"></label>
+        <input asp-for="Minutes" class="form-control" />
+        <span asp-validation-for="Minutes" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-2">
+        <label asp-for="Intensity" class="form-label"></label>
+        <input asp-for="Intensity" class="form-control" />
+        <span asp-validation-for="Intensity" class="text-danger"></span>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="Focus" class="form-label"></label>
+        <input asp-for="Focus" class="form-control" />
+        <span asp-validation-for="Focus" class="text-danger"></span>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="Comment" class="form-label"></label>
+        <textarea asp-for="Comment" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Comment" class="text-danger"></span>
+    </div>
+
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Spara</button>
+        <a asp-action="Index" class="btn btn-secondary">Tillbaka</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
