@@ -107,9 +107,13 @@ public class PracticeSessionController : Controller
     {
         var s = await _sessionRepo.GetAsync(id);
         if (s == null) return NotFound();
-        // visa ett enkelt read-only-kort, eller återanvänd Edit-vy i readonly-läge
+
+        var inst = await _instrumentRepo.GetAsync(s.InstrumentId);
+        ViewBag.InstrumentName = inst?.Name ?? $"#{s.InstrumentId}";
+
         return View(s);
     }
+
 
     // Hjälpmetod för instrumentlistan
     private async Task PopulateInstrumentsSelectList(int? selectedId = null)
