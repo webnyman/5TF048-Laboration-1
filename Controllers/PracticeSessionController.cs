@@ -25,14 +25,13 @@ public class PracticeSessionController : Controller
         string? sort = "date", bool desc = true,
         int page = 1, int pageSize = 20)
     {
-        var (items, total) = await _sessionRepo.SearchAsync(q, instrumentId, sort, desc, page, pageSize);
+        var items = await _sessionRepo.SearchAsync(q, instrumentId, sort, desc, page, pageSize);
 
         ViewBag.Query = q;
         ViewBag.Sort = sort;
         ViewBag.Desc = desc;
         ViewBag.Page = page;
         ViewBag.PageSize = pageSize;
-        ViewBag.Total = total;
 
         // Dropdown för instrument
         var instruments = await _instrumentRepo.GetAllAsync();

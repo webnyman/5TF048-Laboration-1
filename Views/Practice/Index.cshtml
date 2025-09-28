@@ -6,7 +6,6 @@
     string q = ViewBag.Query as string ?? "";
     string sort = ViewBag.Sort as string ?? "date";
     bool desc = ViewBag.Desc is bool b && b;
-    int total = ViewBag.Total is int t ? t : Model.Count();
     var instrumentIdValue = Context.Request.Query["instrumentId"].ToString();
 
     Func<string, string> sortLink = s =>
@@ -73,8 +72,3 @@
         }
     </tbody>
 </table>
-
-@if (total == 0)
-{
-    <p><em>Inga träffar.</em></p>
-}

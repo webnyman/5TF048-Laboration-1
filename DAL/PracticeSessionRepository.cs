@@ -12,7 +12,7 @@ public class PracticeSessionRepository : IPracticeSessionRepository
     public async Task<int> CreateAsync(PracticeSession s)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.sp_CreatePracticeSession", con)
+        using var cmd = new SqlCommand("dbo.usp_CreatePracticeSession", con)
         { CommandType = CommandType.StoredProcedure };
 
         cmd.Parameters.AddWithValue("@InstrumentId", s.InstrumentId);
@@ -30,7 +30,7 @@ public class PracticeSessionRepository : IPracticeSessionRepository
     public async Task<PracticeSession?> GetAsync(int sessionId)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.sp_GetPracticeSessionById", con)
+        using var cmd = new SqlCommand("dbo.usp_GetPracticeSessionById", con)
         { CommandType = CommandType.StoredProcedure };
 
         cmd.Parameters.AddWithValue("@SessionId", sessionId);
@@ -54,7 +54,7 @@ public class PracticeSessionRepository : IPracticeSessionRepository
     public async Task<bool> UpdateAsync(PracticeSession s)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.sp_UpdatePracticeSession", con)
+        using var cmd = new SqlCommand("dbo.usp_UpdatePracticeSession", con)
         { CommandType = CommandType.StoredProcedure };
 
         cmd.Parameters.AddWithValue("@SessionId", s.SessionId);
@@ -73,7 +73,7 @@ public class PracticeSessionRepository : IPracticeSessionRepository
     public async Task<bool> DeleteAsync(int sessionId)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.sp_DeletePracticeSession", con)
+        using var cmd = new SqlCommand("dbo.usp_DeletePracticeSession", con)
         { CommandType = CommandType.StoredProcedure };
 
         cmd.Parameters.AddWithValue("@SessionId", sessionId);
@@ -83,16 +83,16 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         return rows == 1;
     }
 
-    public async Task<(IEnumerable<PracticeSessionListItem>, int)> SearchAsync(
-        string? query, int? instrumentId, string? sort, bool desc, int page, int pageSize)
+    public async Task<IEnumerable<PracticeSessionListItem>> SearchAsync(
+    string? query, int? instrumentId, string? sort, bool desc, int page, int pageSize)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.sp_SearchPracticeSessions", con)
+        using var cmd = new SqlCommand("dbo.usp_SearchPracticeSessions", con)
         { CommandType = CommandType.StoredProcedure };
 
         cmd.Parameters.AddWithValue("@Query", (object?)query ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@InstrumentId", (object?)instrumentId ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@Sort", sort ?? "date");   // "date" | "minutes" | "intensity"
+        cmd.Parameters.AddWithValue("@Sort", sort ?? "date");
         cmd.Parameters.AddWithValue("@Desc", desc);
         cmd.Parameters.AddWithValue("@Page", page <= 0 ? 1 : page);
         cmd.Parameters.AddWithValue("@PageSize", pageSize <= 0 ? 10 : pageSize);
@@ -114,12 +114,6 @@ public class PracticeSessionRepository : IPracticeSessionRepository
                 InstrumentName = r.GetString(r.GetOrdinal("InstrumentName"))
             });
         }
-
-        // andra resultset: total count
-        int total = 0;
-        if (await r.NextResultAsync() && await r.ReadAsync())
-            total = r.GetInt32(0);
-
-        return (list, total);
+        return list;
     }
 }

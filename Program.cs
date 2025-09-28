@@ -28,7 +28,7 @@ app.UseSession();   // Important: activates session handling
 // Configure the default route so the app starts at Practice/Start.
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Practice}/{action=Start}/{id?}".Trim());
+    pattern: "{controller=PracticeSession}/{action=Index}/{id?}");
 
 if (app.Environment.IsDevelopment())
 {

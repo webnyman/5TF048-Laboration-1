@@ -11,7 +11,8 @@ namespace PracticeLogger.DAL
         Task<bool> DeleteAsync(int sessionId);
 
         // Sök + filter + sort + paging. Returnerar items + total count.
-        Task<(IEnumerable<PracticeSessionListItem> Items, int Total)> SearchAsync(
-            string? query, int? instrumentId, string? sort, bool desc, int page, int pageSize);
+        Task<IEnumerable<PracticeSessionListItem>> SearchAsync(
+    string? query, int? instrumentId, string? sort, bool desc, int page, int pageSize);
+
     }
 }
