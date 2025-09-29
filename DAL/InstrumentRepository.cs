@@ -52,20 +52,30 @@ public class InstrumentRepository : IInstrumentRepository
     public async Task<bool> UpdateAsync(Instrument instrument)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.usp_Instruments_Update", con) { CommandType = CommandType.StoredProcedure };
+        using var cmd = new SqlCommand("dbo.usp_Instruments_Update", con)
+        { CommandType = CommandType.StoredProcedure };
+
         cmd.Parameters.AddWithValue("@InstrumentId", instrument.InstrumentId);
         cmd.Parameters.AddWithValue("@Name", instrument.Name);
         cmd.Parameters.AddWithValue("@Family", instrument.Family);
+
         await con.OpenAsync();
-        return await cmd.ExecuteNonQueryAsync() == 1;
+        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+        return rows > 0;
     }
+
 
     public async Task<bool> DeleteAsync(int id)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.usp_Instruments_Delete", con) { CommandType = CommandType.StoredProcedure };
+        using var cmd = new SqlCommand("dbo.usp_Instruments_Delete", con)
+        { CommandType = CommandType.StoredProcedure };
+
         cmd.Parameters.AddWithValue("@InstrumentId", id);
+
         await con.OpenAsync();
-        return await cmd.ExecuteNonQueryAsync() == 1;
+        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+        return rows > 0;
     }
+
 }
