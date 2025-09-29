@@ -1,0 +1,29 @@
+﻿@model Instrument
+@{
+    ViewData["Title"] = "Redigera instrument";
+}
+<h2>Redigera instrument</h2>
+
+<form asp-action="Edit" method="post" class="row g-3">
+    <input type="hidden" asp-for="InstrumentId" />
+
+    <div class="col-md-6">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Family" class="form-label"></label>
+        <input asp-for="Family" class="form-control" />
+        <span asp-validation-for="Family" class="text-danger"></span>
+    </div>
+
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Spara</button>
+        <a asp-action="Index" class="btn btn-secondary">Tillbaka</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
