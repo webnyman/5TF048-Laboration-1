@@ -44,21 +44,14 @@ public class InstrumentRepository : IInstrumentRepository
         using var cmd = new SqlCommand("dbo.usp_Instruments_Create", con)
         { CommandType = CommandType.StoredProcedure };
 
-        cmd.Parameters.AddWithValue("@Name", instrument.Name);
-        cmd.Parameters.AddWithValue("@Family", instrument.Family);
+        cmd.Parameters.Add(new SqlParameter("@Name", SqlDbType.NVarChar, 100) { Value = instrument.Name });
+        cmd.Parameters.Add(new SqlParameter("@Family", SqlDbType.NVarChar, 50) { Value = instrument.Family });
 
         await con.OpenAsync();
-        try
-        {
-            var id = (int)(await cmd.ExecuteScalarAsync() ?? 0);
-            return id;
-        }
-        catch (SqlException ex) when (ex.Number == 50030 || ex.Number == 2627)
-        {
-            // Dublettfel
-            throw new InvalidOperationException("Instrumentet finns redan.", ex);
-        }
+        var scalar = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(scalar);
     }
+
 
 
     public async Task<bool> UpdateAsync(Instrument instrument)
@@ -67,13 +60,21 @@ public class InstrumentRepository : IInstrumentRepository
         using var cmd = new SqlCommand("dbo.usp_Instruments_Update", con)
         { CommandType = CommandType.StoredProcedure };
 
-        cmd.Parameters.AddWithValue("@InstrumentId", instrument.InstrumentId);
-        cmd.Parameters.AddWithValue("@Name", instrument.Name);
-        cmd.Parameters.AddWithValue("@Family", instrument.Family);
+        cmd.Parameters.Add(new SqlParameter("@InstrumentId", SqlDbType.Int) { Value = instrument.InstrumentId });
+        cmd.Parameters.Add(new SqlParameter("@Name", SqlDbType.NVarChar, 100) { Value = instrument.Name });
+        cmd.Parameters.Add(new SqlParameter("@Family", SqlDbType.NVarChar, 50) { Value = instrument.Family });
 
         await con.OpenAsync();
-        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
-        return rows > 0;
+        try
+        {
+            var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+            return rows > 0;
+        }
+        catch (SqlException ex) when (ex.Number == 50041 || ex.Number == 2627 || ex.Number == 2601)
+        {
+            // Namn redan upptaget
+            throw;
+        }
     }
 
 
@@ -83,11 +84,19 @@ public class InstrumentRepository : IInstrumentRepository
         using var cmd = new SqlCommand("dbo.usp_Instruments_Delete", con)
         { CommandType = CommandType.StoredProcedure };
 
-        cmd.Parameters.AddWithValue("@InstrumentId", id);
+        cmd.Parameters.Add(new SqlParameter("@InstrumentId", SqlDbType.Int) { Value = id });
 
         await con.OpenAsync();
-        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
-        return rows > 0;
+        try
+        {
+            var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+            return rows > 0;
+        }
+        catch (SqlException ex) when (ex.Number == 50043 || ex.Number == 547)
+        {
+            // FK-krock: instrument används i sessions
+            throw;
+        }
     }
 
 }

@@ -29,7 +29,8 @@ public class InstrumentController : Controller
         {
             var id = await _repo.CreateAsync(instrument);
             TempData["Flash"] = "Instrumentet skapades.";
-            return RedirectToAction(nameof(Details), new { id });
+            return RedirectToAction("Index", "Instrument");
+
         }
         catch (InvalidOperationException ex)
         {
