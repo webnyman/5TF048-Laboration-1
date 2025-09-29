@@ -41,13 +41,25 @@ public class InstrumentRepository : IInstrumentRepository
     public async Task<int> CreateAsync(Instrument instrument)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.usp_Instruments_Create", con) { CommandType = CommandType.StoredProcedure };
+        using var cmd = new SqlCommand("dbo.usp_Instruments_Create", con)
+        { CommandType = CommandType.StoredProcedure };
+
         cmd.Parameters.AddWithValue("@Name", instrument.Name);
         cmd.Parameters.AddWithValue("@Family", instrument.Family);
+
         await con.OpenAsync();
-        var id = (int)(await cmd.ExecuteScalarAsync() ?? 0);
-        return id;
+        try
+        {
+            var id = (int)(await cmd.ExecuteScalarAsync() ?? 0);
+            return id;
+        }
+        catch (SqlException ex) when (ex.Number == 50030 || ex.Number == 2627)
+        {
+            // Dublettfel
+            throw new InvalidOperationException("Instrumentet finns redan.", ex);
+        }
     }
+
 
     public async Task<bool> UpdateAsync(Instrument instrument)
     {

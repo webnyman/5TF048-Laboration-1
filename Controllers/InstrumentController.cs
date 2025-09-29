@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 using PracticeLogger.Models;
 
 public class InstrumentController : Controller
@@ -18,25 +19,25 @@ public class InstrumentController : Controller
     // CREATE (GET)
     public IActionResult Create() => View(new Instrument());
 
-    // CREATE (POST)
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Instrument model)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(Instrument instrument)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid) return View(instrument);
 
         try
         {
-            var id = await _repo.CreateAsync(model);
-            TempData["Flash"] = $"Instrument '{model.Name}' skapades (ID={id}).";
-            return RedirectToAction(nameof(Index));
+            var id = await _repo.CreateAsync(instrument);
+            TempData["Flash"] = "Instrumentet skapades.";
+            return RedirectToAction(nameof(Details), new { id });
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
-            // T.ex. UNIQUE-konflikt (Name unikt)
-            ModelState.AddModelError("", "Kunde inte skapa instrument. Finns namnet redan?");
-            return View(model);
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(instrument);
         }
     }
+
 
     // EDIT (GET)
     public async Task<IActionResult> Edit(int id)
