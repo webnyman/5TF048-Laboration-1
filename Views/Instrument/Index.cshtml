@@ -1,0 +1,46 @@
+﻿@model IEnumerable<Instrument>
+@{
+    ViewData["Title"] = "Instrument";
+    var q = ViewBag.Query as string ?? "";
+}
+<h2>Instrument</h2>
+
+@if (TempData["Flash"] is string flash)
+{
+    <div class="alert alert-success">@flash</div>
+}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-6">
+        <input class="form-control" type="text" name="q" value="@q" placeholder="Sök namn eller familj..." />
+    </div>
+    <div class="col-md-6">
+        <a class="btn btn-success" asp-action="Create">+ Lägg till instrument</a>
+    </div>
+</form>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr><th>Namn</th><th>Familj</th><th style="width:180px;"></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var it in Model)
+        {
+            <tr>
+                <td>@it.Name</td>
+                <td>@it.Family</td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@it.InstrumentId">Redigera</a>
+                    <form asp-action="Delete" asp-route-id="@it.InstrumentId" method="post" class="d-inline">
+                        <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Ta bort instrument?')">Ta bort</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (!Model.Any())
+{
+    <p><em>Inga instrument hittades.</em></p>
+}
