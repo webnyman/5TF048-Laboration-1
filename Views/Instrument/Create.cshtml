@@ -1,0 +1,27 @@
+﻿@model Instrument
+@{
+    ViewData["Title"] = "Nytt instrument";
+}
+<h2>Nytt instrument</h2>
+
+<form asp-action="Create" method="post" class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Family" class="form-label"></label>
+        <input asp-for="Family" class="form-control" />
+        <span asp-validation-for="Family" class="text-danger"></span>
+    </div>
+
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Spara</button>
+        <a asp-action="Index" class="btn btn-secondary">Avbryt</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
