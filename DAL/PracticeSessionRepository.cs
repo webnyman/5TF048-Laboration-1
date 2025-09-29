@@ -6,15 +6,17 @@ using System.Data;
 public class PracticeSessionRepository : IPracticeSessionRepository
 {
     private readonly string _cs;
+    private static readonly Guid DummyUserId = Guid.Parse("13392206-460D-4FBA-BB5C-88210BC1437A");
+
     public PracticeSessionRepository(IConfiguration cfg)
         => _cs = cfg.GetConnectionString("Lab2")!;
 
     public async Task<int> CreateAsync(PracticeSession s)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.usp_CreatePracticeSession", con)
+        using var cmd = new SqlCommand("dbo.usp_PracticeSession_Create", con)
         { CommandType = CommandType.StoredProcedure };
-
+        cmd.Parameters.AddWithValue("@UserId", DummyUserId);
         cmd.Parameters.AddWithValue("@InstrumentId", s.InstrumentId);
         cmd.Parameters.AddWithValue("@PracticeDate", s.PracticeDate);
         cmd.Parameters.AddWithValue("@Minutes", s.Minutes);
@@ -54,10 +56,11 @@ public class PracticeSessionRepository : IPracticeSessionRepository
     public async Task<bool> UpdateAsync(PracticeSession s)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.usp_UpdatePracticeSession", con)
+        using var cmd = new SqlCommand("dbo.usp_PracticeSession_Update", con)
         { CommandType = CommandType.StoredProcedure };
 
         cmd.Parameters.AddWithValue("@SessionId", s.SessionId);
+        cmd.Parameters.AddWithValue("@UserId", DummyUserId); // tills vidare
         cmd.Parameters.AddWithValue("@InstrumentId", s.InstrumentId);
         cmd.Parameters.AddWithValue("@PracticeDate", s.PracticeDate);
         cmd.Parameters.AddWithValue("@Minutes", s.Minutes);
@@ -66,21 +69,24 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         cmd.Parameters.AddWithValue("@Comment", (object?)s.Comment ?? DBNull.Value);
 
         await con.OpenAsync();
-        var rows = await cmd.ExecuteNonQueryAsync();
-        return rows == 1;
+        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+        return rows > 0;
     }
+
+
 
     public async Task<bool> DeleteAsync(int sessionId)
     {
         using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.usp_DeletePracticeSession", con)
+        using var cmd = new SqlCommand("dbo.usp_PracticeSession_Delete", con)
         { CommandType = CommandType.StoredProcedure };
 
         cmd.Parameters.AddWithValue("@SessionId", sessionId);
+        cmd.Parameters.AddWithValue("@UserId", DummyUserId);
 
         await con.OpenAsync();
-        var rows = await cmd.ExecuteNonQueryAsync();
-        return rows == 1;
+        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+        return rows > 0;
     }
 
     public async Task<IEnumerable<PracticeSessionListItem>> SearchAsync(
