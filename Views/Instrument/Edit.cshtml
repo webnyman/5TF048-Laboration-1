@@ -15,11 +15,15 @@
         <input asp-for="Name" class="form-control" />
         <span asp-validation-for="Name" class="text-danger"></span>
     </div>
-    <div class="col-md-6">
+    <div class="mb-3">
         <label asp-for="Family" class="form-label"></label>
-        <input asp-for="Family" class="form-control" />
+        <select asp-for="Family"
+                asp-items="Html.GetEnumSelectList<PracticeLogger.Models.InstrumentFamily>()"
+                class="form-select">
+        </select>
         <span asp-validation-for="Family" class="text-danger"></span>
     </div>
+
 
     <div class="col-12">
         <button type="submit" class="btn btn-primary">Spara</button>

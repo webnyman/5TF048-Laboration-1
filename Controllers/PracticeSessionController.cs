@@ -59,7 +59,7 @@ public class PracticeSessionController : Controller
         }
 
         var newId = await _sessionRepo.CreateAsync(session);
-        TempData["Flash"] = $"Ny övning sparad (ID={newId}).";
+        TempData["Flash"] = $"Nytt övningspass sparat (ID={newId}).";
         return RedirectToAction(nameof(Index));
     }
 

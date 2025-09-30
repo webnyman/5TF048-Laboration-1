@@ -1,6 +1,7 @@
 ﻿using Microsoft.Data.SqlClient;
-using System.Data;
 using PracticeLogger.Models;
+using System;
+using System.Data;
 
 public class InstrumentRepository : IInstrumentRepository
 {
@@ -21,7 +22,8 @@ public class InstrumentRepository : IInstrumentRepository
             {
                 InstrumentId = r.GetInt32(0),
                 Name = r.GetString(1),
-                Family = r.GetString(2)
+                Family = Enum.Parse<InstrumentFamily>(r.GetString(2))
+
             });
         }
         return list;
@@ -35,7 +37,7 @@ public class InstrumentRepository : IInstrumentRepository
         await con.OpenAsync();
         using var r = await cmd.ExecuteReaderAsync();
         if (!await r.ReadAsync()) return null;
-        return new Instrument { InstrumentId = r.GetInt32(0), Name = r.GetString(1), Family = r.GetString(2) };
+        return new Instrument { InstrumentId = r.GetInt32(0), Name = r.GetString(1), Family = Enum.Parse<InstrumentFamily>(r.GetString(2)) };
     }
 
     public async Task<int> CreateAsync(Instrument instrument)
@@ -45,7 +47,12 @@ public class InstrumentRepository : IInstrumentRepository
         { CommandType = CommandType.StoredProcedure };
 
         cmd.Parameters.Add(new SqlParameter("@Name", SqlDbType.NVarChar, 100) { Value = instrument.Name });
-        cmd.Parameters.Add(new SqlParameter("@Family", SqlDbType.NVarChar, 50) { Value = instrument.Family });
+        cmd.Parameters.Add(new SqlParameter("@Family", SqlDbType.NVarChar, 50)
+        {
+            Value = instrument.Family.ToString()
+        });
+
+
 
         await con.OpenAsync();
         var scalar = await cmd.ExecuteScalarAsync();
@@ -62,7 +69,11 @@ public class InstrumentRepository : IInstrumentRepository
 
         cmd.Parameters.Add(new SqlParameter("@InstrumentId", SqlDbType.Int) { Value = instrument.InstrumentId });
         cmd.Parameters.Add(new SqlParameter("@Name", SqlDbType.NVarChar, 100) { Value = instrument.Name });
-        cmd.Parameters.Add(new SqlParameter("@Family", SqlDbType.NVarChar, 50) { Value = instrument.Family });
+        cmd.Parameters.Add(new SqlParameter("@Family", SqlDbType.NVarChar, 50)
+        {
+            Value = instrument.Family.ToString()
+        });
+
 
         await con.OpenAsync();
         try
