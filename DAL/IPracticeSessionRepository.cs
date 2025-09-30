@@ -14,5 +14,7 @@ namespace PracticeLogger.DAL
         Task<IEnumerable<PracticeSessionListItem>> SearchAsync(
     string? query, int? instrumentId, string? sort, bool desc, int page, int pageSize);
 
+        Task<PracticeSummary> GetSummaryAsync(int? instrumentId = null);
     }
+
 }

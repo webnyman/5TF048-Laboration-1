@@ -122,4 +122,64 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         }
         return list;
     }
+    public async Task<PracticeSummary> GetSummaryAsync(int? instrumentId = null)
+    {
+        using var con = new SqlConnection(_cs);
+        using var cmd = new SqlCommand("dbo.usp_PracticeSessions_Summary", con)
+        { CommandType = CommandType.StoredProcedure };
+
+        cmd.Parameters.AddWithValue("@InstrumentId", (object?)instrumentId ?? DBNull.Value);
+
+        await con.OpenAsync();
+        using var r = await cmd.ExecuteReaderAsync();
+
+        var totalMinutes = 0;
+        var distinctDays = 0;
+        var entriesCount = 0;
+
+        // 1) totals
+        if (await r.ReadAsync())
+        {
+            totalMinutes = r.IsDBNull(0) ? 0 : r.GetInt32(0);
+            distinctDays = r.IsDBNull(1) ? 0 : r.GetInt32(1);
+            entriesCount = r.IsDBNull(2) ? 0 : r.GetInt32(2);
+        }
+
+        // 2) minutes per instrument
+        var minutesPerInstrument = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        await r.NextResultAsync();
+        while (await r.ReadAsync())
+        {
+            var name = r.GetString(0);
+            var minutes = r.GetInt32(1);
+            minutesPerInstrument[name] = minutes;
+        }
+
+        // 3) minutes per intensity (fyll även luckor 1..5 med 0)
+        var minutesPerIntensity = new Dictionary<int, int>();
+        await r.NextResultAsync();
+        while (await r.ReadAsync())
+        {
+            var intensity = r.GetByte(0); // TINYINT => byte
+            var minutes = r.GetInt32(1);
+            minutesPerIntensity[intensity] = minutes;
+        }
+        for (int i = 1; i <= 5; i++)
+            if (!minutesPerIntensity.ContainsKey(i)) minutesPerIntensity[i] = 0;
+
+        var avgPerDay = distinctDays == 0 ? 0 : Math.Round((double)totalMinutes / distinctDays, 1);
+
+        return new PracticeSummary
+        {
+            TotalMinutes = totalMinutes,
+            AvgPerDay = avgPerDay,
+            MinutesPerInstrument = minutesPerInstrument,
+            MinutesPerIntensity = minutesPerIntensity
+                                 .OrderBy(kv => kv.Key)
+                                 .ToDictionary(k => k.Key, v => v.Value),
+            DistinctActiveDays = distinctDays,
+            EntriesCount = entriesCount
+        };
+    }
+
 }

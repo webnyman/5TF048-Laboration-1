@@ -120,4 +120,21 @@ public class PracticeSessionController : Controller
         var instruments = await _instrumentRepo.GetAllAsync();
         ViewBag.Instruments = new SelectList(instruments, "InstrumentId", "Name", selectedId);
     }
+
+    // Metod för att visa sammanfattning
+    public async Task<IActionResult> Summary(int? instrumentId)
+    {
+        var model = await _sessionRepo.GetSummaryAsync(instrumentId);
+
+        var instruments = await _instrumentRepo.GetAllAsync();
+        ViewBag.Instruments = new SelectList(instruments, "InstrumentId", "Name", instrumentId);
+        ViewBag.Filter = instrumentId.HasValue
+            ? instruments.FirstOrDefault(i => i.InstrumentId == instrumentId)?.Name
+            : null;
+
+        // exempel på ViewData (som i Lab1)
+        ViewData["Info"] = "Denna vy använder PracticeSummary från databasen.";
+        return View(model);
+    }
+
 }
