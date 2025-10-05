@@ -42,7 +42,7 @@ Systemet använder en **SQL Server-databas** med följande centrala tabeller:
 
 ER-schemat nedan visar tabellernas struktur, nycklar och relationer:
 
-📎 *Se [ER-diagrammet](./docs/ER-schema.png)*
+![ER-diagrammet](./docs/ER-schema.png)*
 
 ---
 
@@ -55,7 +55,8 @@ Flödesschemat beskriver användarens interaktion med systemet:
 4. **Summary** – systemet hämtar summerad data via vyer och presenterar grafer  
 5. **AI-analys (framtida steg)** – övningsmönster analyseras via ett externt AI-API  
 
-📎 *Se [flödesschemat](./docs/timeline.png)*
+Tidslinje för projektet:
+![flödesschemat](./docs/timeline.png)*
 
 ---
 
@@ -72,6 +73,9 @@ Här organiseras arbetet i kolumnerna:
 
 Varje uppgift representeras av ett **issue** som kopplas till commits och pull requests för full spårbarhet.  
 På så sätt kan hela utvecklingsprocessen följas visuellt och transparent, från planering till färdig funktionalitet.
+
+[Länk till projektet på Github](https://github.com/users/webnyman/projects/1)
+
 
 📎 *Exempel på Kanban-board:*  
 ![GitHub Projects Kanban Board](./docs/KANBAN.png)
