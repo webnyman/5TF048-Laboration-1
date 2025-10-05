@@ -42,7 +42,7 @@ Systemet använder en **SQL Server-databas** med följande centrala tabeller:
 
 ER-schemat nedan visar tabellernas struktur, nycklar och relationer:
 
-![ER-diagrammet](./docs/ER-schema.png)*
+![ER-diagrammet](./docs/ER-schema.png)
 
 ---
 
@@ -56,7 +56,7 @@ Flödesschemat beskriver användarens interaktion med systemet:
 5. **AI-analys (framtida steg)** – övningsmönster analyseras via ett externt AI-API  
 
 Tidslinje för projektet:
-![flödesschemat](./docs/timeline.png)*
+![flödesschemat](./docs/timeline.png)
 
 ---
 
