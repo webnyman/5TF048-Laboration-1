@@ -59,6 +59,25 @@ Flödesschemat beskriver användarens interaktion med systemet:
 
 ---
 
+## 🗂️ Projektplanering och arbetsmetodik
+
+Projektet planeras och följs upp i **GitHub Projects** med hjälp av ett **Kanban-board**.  
+Här organiseras arbetet i kolumnerna:
+
+- **Backlog** – uppgifter som ännu inte påbörjats
+- **Next Up** – uppgifter som ska påbörjas
+- **In Progress** – uppgifter som aktivt bearbetas  
+- **In Review / Testing** – färdiga delar som väntar på granskning eller testning  
+- **Done** – slutförda uppgifter  
+
+Varje uppgift representeras av ett **issue** som kopplas till commits och pull requests för full spårbarhet.  
+På så sätt kan hela utvecklingsprocessen följas visuellt och transparent, från planering till färdig funktionalitet.
+
+📎 *Exempel på Kanban-board:*  
+![GitHub Projects Kanban Board](./docs/github-kanban.png)
+
+---
+
 ## 🧠 Fortsatt utveckling
 Under projektperioden (4 veckor) kommer fokus ligga på att:
 - Implementera inloggning och rollbaserad behörighet  
