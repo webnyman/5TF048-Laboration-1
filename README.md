@@ -42,7 +42,7 @@ Systemet använder en **SQL Server-databas** med följande centrala tabeller:
 
 ER-schemat nedan visar tabellernas struktur, nycklar och relationer:
 
-📎 *Se [ER-diagrammet](./docs/er-schema.png)*
+📎 *Se [ER-diagrammet](./docs/ER-schema.png)*
 
 ---
 
@@ -55,7 +55,7 @@ Flödesschemat beskriver användarens interaktion med systemet:
 4. **Summary** – systemet hämtar summerad data via vyer och presenterar grafer  
 5. **AI-analys (framtida steg)** – övningsmönster analyseras via ett externt AI-API  
 
-📎 *Se [flödesschemat](./docs/flowchart.png)*
+📎 *Se [flödesschemat](./docs/timeline.png)*
 
 ---
 
@@ -74,7 +74,7 @@ Varje uppgift representeras av ett **issue** som kopplas till commits och pull r
 På så sätt kan hela utvecklingsprocessen följas visuellt och transparent, från planering till färdig funktionalitet.
 
 📎 *Exempel på Kanban-board:*  
-![GitHub Projects Kanban Board](./docs/github-kanban.png)
+![GitHub Projects Kanban Board](./docs/KANBAN.png)
 
 ---
 
