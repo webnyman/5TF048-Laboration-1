@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using PracticeLogger.Models.Auth;
+using PracticeLogger.Models;
 
 namespace PracticeLogger.Data
 {

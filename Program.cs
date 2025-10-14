@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PracticeLogger.DAL;
 using PracticeLogger.Data;
+using PracticeLogger.Models;    
 
 // === Lägg till dina Identity-typer & DbContext-namespace ===
 // using PracticeLogger.Data;           // ApplicationDbContext
