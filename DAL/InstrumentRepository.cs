@@ -6,7 +6,7 @@ using System.Data;
 public class InstrumentRepository : IInstrumentRepository
 {
     private readonly string _cs;
-    public InstrumentRepository(IConfiguration cfg) => _cs = cfg.GetConnectionString("Lab2")!;
+    public InstrumentRepository(IConfiguration cfg) => _cs = cfg.GetConnectionString("DefaultConnection")!;
 
     public async Task<IEnumerable<Instrument>> GetAllAsync(string? search = null)
     {

@@ -1,35 +1,42 @@
-// Program.cs
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using PracticeLogger.DAL;
 using PracticeLogger.Data;
-using PracticeLogger.Models;    
-
-// === L�gg till dina Identity-typer & DbContext-namespace ===
-// using PracticeLogger.Data;           // ApplicationDbContext
-// using PracticeLogger.Models.Auth;    // ApplicationUser, ApplicationRole
+using PracticeLogger.Models;
+using PracticeLogger.DAL;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using PracticeLogger.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------------------------
-// 1) Databaser & Identity
-// ---------------------------
+// 1) DbContext + Identity
 builder.Services.AddDbContext<ApplicationDbContext>(opts =>
-    opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))); // appsettings.json
-
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<ApplicationDbContext>();
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services
     .AddIdentityCore<ApplicationUser>(opt =>
     {
         opt.Password.RequiredLength = 8;
         opt.User.RequireUniqueEmail = true;
+        opt.SignIn.RequireConfirmedAccount = false;
     })
     .AddRoles<ApplicationRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddSignInManager();
+    .AddSignInManager()
+    .AddDefaultTokenProviders();
 
-// Cookie-auth (Identity UI anv�nder detta)
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    // Vart skickas man vid 401 (ej inloggad)?
+    options.LoginPath = "/Identity/Account/Login";
+
+    // Vart skickas man vid 403 (saknar rättigheter/roll)?
+    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+
+    // (valfritt) hur länge gäller cookien
+    options.ExpireTimeSpan = TimeSpan.FromDays(14);
+    options.SlidingExpiration = true;
+});
+
 builder.Services.AddAuthentication(opt =>
 {
     opt.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
@@ -38,24 +45,21 @@ builder.Services.AddAuthentication(opt =>
 })
 .AddIdentityCookies();
 
-// ---------------------------
-// 2) MVC / Razor / Session
-// ---------------------------
+// 2) MVC/Razor/Session
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages();   // beh�vs f�r Identity UI-sidorna
-builder.Services.AddSession();      // om du fortfarande anv�nder session (ex. filter, flash)
+builder.Services.AddRazorPages();
+builder.Services.AddSession();
 
-// ---------------------------
-// 3) DI � Repositories (DAL)
-// ---------------------------
+// 3) DAL
 builder.Services.AddScoped<IPracticeSessionRepository, PracticeSessionRepository>();
 builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
 
+builder.Services.AddSingleton<IEmailSender, DevMailSender>();
+
+
 var app = builder.Build();
 
-// ---------------------------
-// 4) Felhantering & s�kerhet
-// ---------------------------
+// 4) Felhantering
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -66,26 +70,31 @@ else
     app.UseHsts();
 }
 
-// (valfritt) app.UseHttpsRedirection();
+// 5) Middleware-ordning
+// app.UseHttpsRedirection(); // valfritt
 app.UseStaticFiles();
 
-// ---------------------------
-// 5) Ordning p� middleware
-// ---------------------------
 app.UseRouting();
 
-app.UseSession();           // om du anv�nder session
-app.UseAuthentication();    // <-- Viktigt: f�re UseAuthorization
+app.UseSession();
+app.UseAuthentication();   // <-- före Authorization
 app.UseAuthorization();
 
-// ---------------------------
-// 6) Routing
-// ---------------------------
+// 6) Endpoints
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=PracticeSession}/{action=Index}/{id?}");
-
-// Identity UI (Login/Logout/Register etc.)
 app.MapRazorPages();
+
+app.MapGet("/Account/Login", () => Results.Redirect("/Identity/Account/Login"));
+app.MapGet("/Account/Register", () => Results.Redirect("/Identity/Account/Register"));
+
+
+// 7) (valfritt) Seed – ALLTID före Run(), i scope
+// using (var scope = app.Services.CreateScope())
+// {
+//     var sp = scope.ServiceProvider;
+//     await IdentitySeeder.SeedAsync(sp);
+// }
 
 app.Run();

@@ -9,7 +9,7 @@ public class PracticeSessionRepository : IPracticeSessionRepository
     private static readonly Guid DummyUserId = Guid.Parse("13392206-460D-4FBA-BB5C-88210BC1437A");
 
     public PracticeSessionRepository(IConfiguration cfg)
-        => _cs = cfg.GetConnectionString("Lab2")!;
+        => _cs = cfg.GetConnectionString("DefaultConnection")!;
 
     public async Task<int> CreateAsync(PracticeSession s)
     {
