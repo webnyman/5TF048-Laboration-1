@@ -3,12 +3,16 @@ using PracticeLogger.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace PracticeLogger.Controllers
 {
     /// <summary>
     /// Controller for managing practice log entries, including listing, creation, and summary calculations.
     /// </summary>
+    /// 
+    [Authorize]
     public class PracticeController : Controller
     {
         private const string SessionKey = "practice_entries";

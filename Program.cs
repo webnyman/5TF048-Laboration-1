@@ -5,7 +5,7 @@ using PracticeLogger.DAL;
 using PracticeLogger.Data;
 using PracticeLogger.Models;    
 
-// === Lägg till dina Identity-typer & DbContext-namespace ===
+// === Lï¿½gg till dina Identity-typer & DbContext-namespace ===
 // using PracticeLogger.Data;           // ApplicationDbContext
 // using PracticeLogger.Models.Auth;    // ApplicationUser, ApplicationRole
 
@@ -17,6 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ApplicationDbContext>(opts =>
     opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))); // appsettings.json
 
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<ApplicationDbContext>();
+
 builder.Services
     .AddIdentityCore<ApplicationUser>(opt =>
     {
@@ -27,7 +29,7 @@ builder.Services
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager();
 
-// Cookie-auth (Identity UI använder detta)
+// Cookie-auth (Identity UI anvï¿½nder detta)
 builder.Services.AddAuthentication(opt =>
 {
     opt.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
@@ -40,11 +42,11 @@ builder.Services.AddAuthentication(opt =>
 // 2) MVC / Razor / Session
 // ---------------------------
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages();   // behövs för Identity UI-sidorna
-builder.Services.AddSession();      // om du fortfarande använder session (ex. filter, flash)
+builder.Services.AddRazorPages();   // behï¿½vs fï¿½r Identity UI-sidorna
+builder.Services.AddSession();      // om du fortfarande anvï¿½nder session (ex. filter, flash)
 
 // ---------------------------
-// 3) DI – Repositories (DAL)
+// 3) DI ï¿½ Repositories (DAL)
 // ---------------------------
 builder.Services.AddScoped<IPracticeSessionRepository, PracticeSessionRepository>();
 builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
@@ -52,7 +54,7 @@ builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
 var app = builder.Build();
 
 // ---------------------------
-// 4) Felhantering & säkerhet
+// 4) Felhantering & sï¿½kerhet
 // ---------------------------
 if (app.Environment.IsDevelopment())
 {
@@ -68,12 +70,12 @@ else
 app.UseStaticFiles();
 
 // ---------------------------
-// 5) Ordning på middleware
+// 5) Ordning pï¿½ middleware
 // ---------------------------
 app.UseRouting();
 
-app.UseSession();           // om du använder session
-app.UseAuthentication();    // <-- Viktigt: före UseAuthorization
+app.UseSession();           // om du anvï¿½nder session
+app.UseAuthentication();    // <-- Viktigt: fï¿½re UseAuthorization
 app.UseAuthorization();
 
 // ---------------------------

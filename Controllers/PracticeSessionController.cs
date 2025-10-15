@@ -4,7 +4,9 @@ using PracticeLogger.DAL;
 using PracticeLogger.Models;
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
+[Authorize]
 public class PracticeSessionController : Controller
 {
     private readonly IPracticeSessionRepository _sessionRepo;
