@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using PracticeLogger.DAL;
 using PracticeLogger.Models;
 using System;
+using System.Linq;                 // <-- behövs för FirstOrDefault
+using System.Security.Claims;      // <-- behövs för CurrentUserId()
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 
 [Authorize]
 public class PracticeSessionController : Controller
@@ -20,6 +22,10 @@ public class PracticeSessionController : Controller
         _instrumentRepo = instrumentRepo;
     }
 
+    // Hjälpfunktion: hämta inloggad användares GUID från claims
+    private Guid CurrentUserId()
+        => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
     // LISTA + SÖK + FILTRERA + SORTERA
     // /PracticeSession/Index?q=skalor&instrumentId=1&sort=minutes&desc=true&page=1&pageSize=10
     public async Task<IActionResult> Index(
@@ -27,7 +33,8 @@ public class PracticeSessionController : Controller
         string? sort = "date", bool desc = true,
         int page = 1, int pageSize = 20)
     {
-        var items = await _sessionRepo.SearchAsync(q, instrumentId, sort, desc, page, pageSize);
+        var userId = CurrentUserId();
+        var items = await _sessionRepo.SearchAsync(userId, q, instrumentId, sort!, desc, page, pageSize);
 
         ViewBag.Query = q;
         ViewBag.Sort = sort;
@@ -35,7 +42,6 @@ public class PracticeSessionController : Controller
         ViewBag.Page = page;
         ViewBag.PageSize = pageSize;
 
-        // Dropdown för instrument
         var instruments = await _instrumentRepo.GetAllAsync();
         ViewBag.Instruments = new SelectList(instruments, "InstrumentId", "Name", instrumentId);
 
@@ -60,6 +66,8 @@ public class PracticeSessionController : Controller
             return View(session);
         }
 
+        session.UserId = CurrentUserId(); // 👈 koppla passet till inloggad användare
+
         var newId = await _sessionRepo.CreateAsync(session);
         TempData["Flash"] = $"Nytt övningspass sparat (ID={newId}).";
         return RedirectToAction(nameof(Index));
@@ -68,7 +76,8 @@ public class PracticeSessionController : Controller
     // EDIT (GET)
     public async Task<IActionResult> Edit(int id)
     {
-        var s = await _sessionRepo.GetAsync(id);
+        var userId = CurrentUserId();
+        var s = await _sessionRepo.GetAsync(userId, id); // 👈 säkra ägarskap
         if (s == null) return NotFound();
 
         await PopulateInstrumentsSelectList(s.InstrumentId);
@@ -86,7 +95,8 @@ public class PracticeSessionController : Controller
             return View(session);
         }
 
-        var ok = await _sessionRepo.UpdateAsync(session);
+        var userId = CurrentUserId();
+        var ok = await _sessionRepo.UpdateAsync(userId, session); // 👈 säkra ägarskap i SP/SQL
         if (!ok) return NotFound();
 
         TempData["Flash"] = "Övningen uppdaterades.";
@@ -98,15 +108,17 @@ public class PracticeSessionController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        var ok = await _sessionRepo.DeleteAsync(id);
+        var userId = CurrentUserId();
+        var ok = await _sessionRepo.DeleteAsync(userId, id); // 👈 säkra ägarskap
         TempData["Flash"] = ok ? "Övningen raderades." : "Radering misslyckades.";
         return RedirectToAction(nameof(Index));
     }
 
-    // (valfritt) DETAILS (GET)
+    // DETAILS (GET)
     public async Task<IActionResult> Details(int id)
     {
-        var s = await _sessionRepo.GetAsync(id);
+        var userId = CurrentUserId();
+        var s = await _sessionRepo.GetAsync(userId, id); // 👈 säkra ägarskap
         if (s == null) return NotFound();
 
         var inst = await _instrumentRepo.GetAsync(s.InstrumentId);
@@ -115,18 +127,11 @@ public class PracticeSessionController : Controller
         return View(s);
     }
 
-
-    // Hjälpmetod för instrumentlistan
-    private async Task PopulateInstrumentsSelectList(int? selectedId = null)
-    {
-        var instruments = await _instrumentRepo.GetAllAsync();
-        ViewBag.Instruments = new SelectList(instruments, "InstrumentId", "Name", selectedId);
-    }
-
-    // Metod för att visa sammanfattning
+    // SUMMARY
     public async Task<IActionResult> Summary(int? instrumentId)
     {
-        var model = await _sessionRepo.GetSummaryAsync(instrumentId);
+        var userId = CurrentUserId();
+        var model = await _sessionRepo.GetSummaryAsync(userId, instrumentId); // 👈 filtrera på användare
 
         var instruments = await _instrumentRepo.GetAllAsync();
         ViewBag.Instruments = new SelectList(instruments, "InstrumentId", "Name", instrumentId);
@@ -134,9 +139,14 @@ public class PracticeSessionController : Controller
             ? instruments.FirstOrDefault(i => i.InstrumentId == instrumentId)?.Name
             : null;
 
-        // exempel på ViewData (som i Lab1)
         ViewData["Info"] = "Denna vy använder PracticeSummary från databasen.";
         return View(model);
     }
 
+    // Hjälpmetod för instrumentlistan
+    private async Task PopulateInstrumentsSelectList(int? selectedId = null)
+    {
+        var instruments = await _instrumentRepo.GetAllAsync();
+        ViewBag.Instruments = new SelectList(instruments, "InstrumentId", "Name", selectedId);
+    }
 }

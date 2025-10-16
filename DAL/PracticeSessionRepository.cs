@@ -53,14 +53,14 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         };
     }
 
-    public async Task<bool> UpdateAsync(PracticeSession s)
+    public async Task<bool> UpdateAsync(Guid userId, PracticeSession s)
     {
         using var con = new SqlConnection(_cs);
         using var cmd = new SqlCommand("dbo.usp_PracticeSession_Update", con)
         { CommandType = CommandType.StoredProcedure };
 
+        cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@SessionId", s.SessionId);
-        cmd.Parameters.AddWithValue("@UserId", DummyUserId); // tills vidare
         cmd.Parameters.AddWithValue("@InstrumentId", s.InstrumentId);
         cmd.Parameters.AddWithValue("@PracticeDate", s.PracticeDate);
         cmd.Parameters.AddWithValue("@Minutes", s.Minutes);
@@ -75,33 +75,35 @@ public class PracticeSessionRepository : IPracticeSessionRepository
 
 
 
-    public async Task<bool> DeleteAsync(int sessionId)
+    public async Task<bool> DeleteAsync(Guid userId, int sessionId)
     {
         using var con = new SqlConnection(_cs);
         using var cmd = new SqlCommand("dbo.usp_PracticeSession_Delete", con)
         { CommandType = CommandType.StoredProcedure };
 
+        cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@SessionId", sessionId);
-        cmd.Parameters.AddWithValue("@UserId", DummyUserId);
 
         await con.OpenAsync();
         var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
         return rows > 0;
     }
 
+
     public async Task<IEnumerable<PracticeSessionListItem>> SearchAsync(
-    string? query, int? instrumentId, string? sort, bool desc, int page, int pageSize)
+     Guid userId, string? query, int? instrumentId, string sort, bool desc, int page, int pageSize)
     {
         using var con = new SqlConnection(_cs);
         using var cmd = new SqlCommand("dbo.usp_SearchPracticeSessions", con)
         { CommandType = CommandType.StoredProcedure };
 
+        cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@Query", (object?)query ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@InstrumentId", (object?)instrumentId ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@Sort", sort ?? "date");
+        cmd.Parameters.AddWithValue("@Sort", sort);
         cmd.Parameters.AddWithValue("@Desc", desc);
-        cmd.Parameters.AddWithValue("@Page", page <= 0 ? 1 : page);
-        cmd.Parameters.AddWithValue("@PageSize", pageSize <= 0 ? 10 : pageSize);
+        cmd.Parameters.AddWithValue("@Page", page);
+        cmd.Parameters.AddWithValue("@PageSize", pageSize);
 
         await con.OpenAsync();
         using var r = await cmd.ExecuteReaderAsync();

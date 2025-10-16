@@ -5,15 +5,13 @@ namespace PracticeLogger.DAL
 {
     public interface IPracticeSessionRepository
     {
-        // CRUD + Search + Summary
-        Task<int> CreateAsync(PracticeSession s);
-        Task<PracticeSession?> GetAsync(int sessionId);
-        Task<bool> UpdateAsync(PracticeSession s);
-        Task<bool> DeleteAsync(int sessionId);
-        Task<IEnumerable<PracticeSessionListItem>> SearchAsync(
-    string? query, int? instrumentId, string? sort, bool desc, int page, int pageSize);
-
-        Task<PracticeSummary> GetSummaryAsync(int? instrumentId = null);
+        Task<IEnumerable<PracticeSessionListItem>> SearchAsync(Guid userId, string? query, int? instrumentId, string sort, bool desc, int page, int pageSize);
+        Task<PracticeSession?> GetAsync(Guid userId, int sessionId);
+        Task<int> CreateAsync(PracticeSession s); // s.UserId ska redan vara satt
+        Task<bool> UpdateAsync(Guid userId, PracticeSession s);
+        Task<bool> DeleteAsync(Guid userId, int sessionId);
+        Task<PracticeSummary> GetSummaryAsync(Guid userId, int? instrumentId);
     }
+
 
 }
