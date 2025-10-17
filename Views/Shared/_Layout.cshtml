@@ -38,12 +38,12 @@
 
                     <!-- Höger meny: Auth -->
                     <ul class="navbar-nav ms-auto">
+                        @using System.Security.Claims
                         @if (User.Identity?.IsAuthenticated ?? false)
                         {
+                            var displayName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name;
                             <li class="nav-item">
-                                <span class="navbar-text me-2">
-                                    Hej, @User.Identity?.Name
-                                </span>
+                                <span class="navbar-text me-3">Hej, @displayName!</span>
                             </li>
                             <li class="nav-item">
                                 <form class="d-inline" asp-area="Identity" asp-page="/Account/Logout" method="post">

@@ -6,7 +6,6 @@ using System.Data;
 public class PracticeSessionRepository : IPracticeSessionRepository
 {
     private readonly string _cs;
-    private static readonly Guid DummyUserId = Guid.Parse("13392206-460D-4FBA-BB5C-88210BC1437A");
 
     public PracticeSessionRepository(IConfiguration cfg)
         => _cs = cfg.GetConnectionString("DefaultConnection")!;
@@ -16,7 +15,8 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         using var con = new SqlConnection(_cs);
         using var cmd = new SqlCommand("dbo.usp_PracticeSession_Create", con)
         { CommandType = CommandType.StoredProcedure };
-        cmd.Parameters.AddWithValue("@UserId", DummyUserId);
+
+        cmd.Parameters.AddWithValue("@UserId", s.UserId);              // ⬅️ ändrat
         cmd.Parameters.AddWithValue("@InstrumentId", s.InstrumentId);
         cmd.Parameters.AddWithValue("@PracticeDate", s.PracticeDate);
         cmd.Parameters.AddWithValue("@Minutes", s.Minutes);
@@ -29,12 +29,14 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         return Convert.ToInt32(scalar);
     }
 
-    public async Task<PracticeSession?> GetAsync(int sessionId)
+
+    public async Task<PracticeSession?> GetAsync(Guid userId, int sessionId)
     {
         using var con = new SqlConnection(_cs);
         using var cmd = new SqlCommand("dbo.usp_GetPracticeSessionById", con)
         { CommandType = CommandType.StoredProcedure };
 
+        cmd.Parameters.AddWithValue("@UserId", userId);       // ⬅️ nytt
         cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         await con.OpenAsync();
@@ -47,11 +49,13 @@ public class PracticeSessionRepository : IPracticeSessionRepository
             InstrumentId = r.GetInt32(r.GetOrdinal("InstrumentId")),
             PracticeDate = r.GetDateTime(r.GetOrdinal("PracticeDate")),
             Minutes = r.GetInt32(r.GetOrdinal("Minutes")),
-            Intensity = (byte)r.GetByte(r.GetOrdinal("Intensity")),
+            Intensity = r.GetByte(r.GetOrdinal("Intensity")),
             Focus = r.GetString(r.GetOrdinal("Focus")),
-            Comment = r.IsDBNull(r.GetOrdinal("Comment")) ? null : r.GetString(r.GetOrdinal("Comment"))
+            Comment = r.IsDBNull(r.GetOrdinal("Comment")) ? null : r.GetString(r.GetOrdinal("Comment")),
+            UserId = userId
         };
     }
+
 
     public async Task<bool> UpdateAsync(Guid userId, PracticeSession s)
     {
@@ -124,12 +128,13 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         }
         return list;
     }
-    public async Task<PracticeSummary> GetSummaryAsync(int? instrumentId = null)
+    public async Task<PracticeSummary> GetSummaryAsync(Guid userId, int? instrumentId = null)
     {
         using var con = new SqlConnection(_cs);
         using var cmd = new SqlCommand("dbo.usp_PracticeSessions_Summary", con)
         { CommandType = CommandType.StoredProcedure };
 
+        cmd.Parameters.AddWithValue("@UserId", userId);                         // ⬅️ nytt
         cmd.Parameters.AddWithValue("@InstrumentId", (object?)instrumentId ?? DBNull.Value);
 
         await con.OpenAsync();
@@ -139,7 +144,6 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         var distinctDays = 0;
         var entriesCount = 0;
 
-        // 1) totals
         if (await r.ReadAsync())
         {
             totalMinutes = r.IsDBNull(0) ? 0 : r.GetInt32(0);
@@ -147,25 +151,16 @@ public class PracticeSessionRepository : IPracticeSessionRepository
             entriesCount = r.IsDBNull(2) ? 0 : r.GetInt32(2);
         }
 
-        // 2) minutes per instrument
         var minutesPerInstrument = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         await r.NextResultAsync();
         while (await r.ReadAsync())
-        {
-            var name = r.GetString(0);
-            var minutes = r.GetInt32(1);
-            minutesPerInstrument[name] = minutes;
-        }
+            minutesPerInstrument[r.GetString(0)] = r.GetInt32(1);
 
-        // 3) minutes per intensity (fyll även luckor 1..5 med 0)
         var minutesPerIntensity = new Dictionary<int, int>();
         await r.NextResultAsync();
         while (await r.ReadAsync())
-        {
-            var intensity = r.GetByte(0); // TINYINT => byte
-            var minutes = r.GetInt32(1);
-            minutesPerIntensity[intensity] = minutes;
-        }
+            minutesPerIntensity[r.GetByte(0)] = r.GetInt32(1);
+
         for (int i = 1; i <= 5; i++)
             if (!minutesPerIntensity.ContainsKey(i)) minutesPerIntensity[i] = 0;
 
@@ -177,11 +172,12 @@ public class PracticeSessionRepository : IPracticeSessionRepository
             AvgPerDay = avgPerDay,
             MinutesPerInstrument = minutesPerInstrument,
             MinutesPerIntensity = minutesPerIntensity
-                                 .OrderBy(kv => kv.Key)
-                                 .ToDictionary(k => k.Key, v => v.Value),
+                                    .OrderBy(kv => kv.Key)
+                                    .ToDictionary(k => k.Key, v => v.Value),
             DistinctActiveDays = distinctDays,
             EntriesCount = entriesCount
         };
     }
+
 
 }

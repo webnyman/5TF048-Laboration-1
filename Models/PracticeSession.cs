@@ -8,6 +8,9 @@ namespace PracticeLogger.Models
         public int SessionId { get; set; }
 
         [Required]
+        public Guid UserId { get; set; }
+
+        [Required]
         public int InstrumentId { get; set; }
 
         [Required, DataType(DataType.Date)]

@@ -18,6 +18,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using PracticeLogger.Models;   // ApplicationUser
+using System.Security.Claims;       // Claim
+
 
 namespace PracticeLogger.Areas.Identity.Pages.Account
 {
@@ -97,6 +100,12 @@ namespace PracticeLogger.Areas.Identity.Pages.Account
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
+
+            [Required]
+            [StringLength(100)]
+            [Display(Name = "Visningsnamn")]
+            public string DisplayName { get; set; } = "";
+
         }
 
 
@@ -113,6 +122,8 @@ namespace PracticeLogger.Areas.Identity.Pages.Account
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
+                user.DisplayName = Input.DisplayName;
+
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
@@ -121,6 +132,10 @@ namespace PracticeLogger.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
+                    // Lägg till en claim så vi kan läsa namnet enkelt i UI
+                    await _userManager.AddClaimAsync(user,
+                        new Claim("DisplayName", user.DisplayName ?? user.Email));
+
 
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
