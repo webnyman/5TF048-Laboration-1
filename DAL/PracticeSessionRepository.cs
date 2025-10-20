@@ -103,13 +103,13 @@ public class PracticeSessionRepository : IPracticeSessionRepository
 
             PracticeType = r.IsDBNull("PracticeType") ? (byte?)null : r.GetByte("PracticeType"),
             Goal = r.IsDBNull("Goal") ? null : r.GetString("Goal"),
-            Achieved = !r.IsDBNull("Achieved") && r.GetBoolean("Achieved"),
+            Achieved = !r.IsDBNull(r.GetOrdinal("Achieved")) && r.GetBoolean(r.GetOrdinal("Achieved")),
             Mood = r.IsDBNull("Mood") ? (byte?)null : r.GetByte("Mood"),
             Energy = r.IsDBNull("Energy") ? (byte?)null : r.GetByte("Energy"),
             FocusScore = r.IsDBNull("FocusScore") ? (byte?)null : r.GetByte("FocusScore"),
             TempoStart = r.IsDBNull("TempoStart") ? (short?)null : r.GetInt16("TempoStart"),
             TempoEnd = r.IsDBNull("TempoEnd") ? (short?)null : r.GetInt16("TempoEnd"),
-            Metronome = r.IsDBNull("Metronome") ? (bool?)null : r.GetBoolean("Metronome"),
+            Metronome = !r.IsDBNull(r.GetOrdinal("Metronome")) && r.GetBoolean(r.GetOrdinal("Metronome")),
             Reps = r.IsDBNull("Reps") ? (short?)null : r.GetInt16("Reps"),
             Errors = r.IsDBNull("Errors") ? (short?)null : r.GetInt16("Errors"),
         };

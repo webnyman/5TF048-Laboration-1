@@ -65,6 +65,10 @@
                         @if (Model.TempoStart.HasValue || Model.TempoEnd.HasValue)
                         {
                             @($"{Model.TempoStart ?? 0} → {Model.TempoEnd ?? 0} bpm")
+                            @if (Model.Metronome == true)
+                            {
+                                <span class="ms-2 badge bg-info text-dark">Metronom</span>
+                            }
                         }
                         else
                         {

@@ -18,6 +18,10 @@ namespace PracticeLogger.Models
         // Nya fält för visning i Index/Details
         public byte? PracticeType { get; set; }     // Enum-typ eller kod (1=Uppvärmning, etc.)
         public string? Goal { get; set; }           // Text för målbeskrivning
-        public bool Achieved { get; set; }          // Om målet uppnåtts
+        public bool Achieved { get; set; } = false;          // Om målet uppnåtts
+                                                    // innan
+  
+        public bool Metronome { get; set; } = false;
+
     }
 }

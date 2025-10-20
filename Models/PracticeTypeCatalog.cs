@@ -1,33 +1,31 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Collections.Generic;
 
-namespace PracticeLogger.Models
+public static class PracticeTypeCatalog
 {
-    public static class PracticeTypeCatalog
+    private static readonly (byte Id, string Name)[] _items =
     {
-        // Kod → Etikett (kan användas överallt)
-        public static readonly IReadOnlyDictionary<byte, string> Labels = new Dictionary<byte, string>
-        {
-            { (byte)PracticeType.Warmup,    "Uppvärmning" },
-            { (byte)PracticeType.Teknik,    "Teknik" },
-            { (byte)PracticeType.Skalor,    "Skalor" },
-            { (byte)PracticeType.Etyder,    "Etyder" },
-            { (byte)PracticeType.Repertoar, "Repertoar" },
-            { (byte)PracticeType.Ovrigt,    "Övrigt" }
-        };
+        (1, "Uppvärmning"),
+        (2, "Teknik"),
+        (3, "Skalor"),
+        (4, "Etyder"),
+        (5, "Repertoar"),
+        (6, "Övrigt")
+    };
 
-        // För dropdowns i formulär
-        public static IEnumerable<SelectListItem> ToSelectList(byte? selected = null)
+    // Ny version för SelectList
+    public static IEnumerable<SelectListItem> ToSelectList(byte? selected = null)
+        => _items.Select(i => new SelectListItem
         {
-            foreach (var kv in Labels)
-            {
-                yield return new SelectListItem
-                {
-                    Value = kv.Key.ToString(),
-                    Text = kv.Value,
-                    Selected = selected.HasValue && kv.Key == selected.Value
-                };
-            }
-        }
-    }
+            Text = i.Name,
+            Value = i.Id.ToString(),
+            Selected = selected == i.Id
+        });
+
+    // Hjälpmetod för att slå upp namn
+    public static string? NameOf(byte? id)
+        => _items.FirstOrDefault(x => x.Id == id).Name;
+
+    // 👇 Lägg till denna för bakåtkompatibilitet
+    public static readonly Dictionary<byte, string> Labels =
+        _items.ToDictionary(x => x.Id, x => x.Name);
 }

@@ -44,13 +44,11 @@
         </div>
 
         <!-- Passtyp + mål -->
-        <div class="col-md-4">
-            <label class="form-label">Passtyp</label>
-            <select asp-for="PracticeType" class="form-select"
-                    asp-items="@(new SelectList(PracticeTypeCatalog.ToSelectList(Model.PracticeType)))">
-            </select>
-            <span asp-validation-for="PracticeType" class="text-danger"></span>
-        </div>
+        <select asp-for="PracticeType"
+                class="form-select"
+                asp-items="PracticeTypeCatalog.ToSelectList(Model?.PracticeType)">
+            <option value="">– Välj passtyp –</option>  <!-- låter null vara möjligt -->
+        </select>
 
         <div class="col-md-8">
             <label asp-for="Goal" class="form-label">Mål</label>

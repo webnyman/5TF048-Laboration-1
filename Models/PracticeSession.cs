@@ -30,7 +30,7 @@ namespace PracticeLogger.Models
         public byte? PracticeType { get; set; }     // 1–6
         [MaxLength(200)]
         public string? Goal { get; set; }
-        public bool? Achieved { get; set; }
+        public bool Achieved { get; set; } = false;
 
         [Range(1, 5)] public byte? Mood { get; set; }
         [Range(1, 5)] public byte? Energy { get; set; }
@@ -38,7 +38,7 @@ namespace PracticeLogger.Models
 
         [Range(20, 400)] public short? TempoStart { get; set; }
         [Range(20, 400)] public short? TempoEnd { get; set; }
-        public bool? Metronome { get; set; }
+        public bool Metronome { get; set; } = false;
 
         [Range(0, 1000)] public short? Reps { get; set; }
         [Range(0, 1000)] public short? Errors { get; set; }
