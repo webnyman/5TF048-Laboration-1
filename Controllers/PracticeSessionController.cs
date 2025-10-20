@@ -24,7 +24,13 @@ public class PracticeSessionController : Controller
 
     // Hjälpfunktion: hämta inloggad användares GUID från claims
     private Guid CurrentUserId()
-        => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    {
+        var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(id, out var guid))
+            throw new UnauthorizedAccessException("Missing or invalid user id.");
+        return guid;
+    }
+
 
     // LISTA + SÖK + FILTRERA + SORTERA
     // /PracticeSession/Index?q=skalor&instrumentId=1&sort=minutes&desc=true&page=1&pageSize=10
@@ -33,6 +39,9 @@ public class PracticeSessionController : Controller
         string? sort = "date", bool desc = true,
         int page = 1, int pageSize = 20)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+
         var userId = CurrentUserId();
         var items = await _sessionRepo.SearchAsync(userId, q, instrumentId, sort!, desc, page, pageSize);
 

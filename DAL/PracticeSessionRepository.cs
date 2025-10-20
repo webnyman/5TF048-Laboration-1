@@ -16,7 +16,7 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         using var cmd = new SqlCommand("dbo.usp_PracticeSession_Create", con)
         { CommandType = CommandType.StoredProcedure };
 
-        cmd.Parameters.AddWithValue("@UserId", s.UserId);              // ⬅️ ändrat
+        cmd.Parameters.AddWithValue("@UserId", s.UserId);
         cmd.Parameters.AddWithValue("@InstrumentId", s.InstrumentId);
         cmd.Parameters.AddWithValue("@PracticeDate", s.PracticeDate);
         cmd.Parameters.AddWithValue("@Minutes", s.Minutes);
@@ -24,10 +24,57 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         cmd.Parameters.AddWithValue("@Focus", s.Focus);
         cmd.Parameters.AddWithValue("@Comment", (object?)s.Comment ?? DBNull.Value);
 
+        // nya fält (alla optional)
+        cmd.Parameters.AddWithValue("@PracticeType", (object?)s.PracticeType ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Goal", (object?)s.Goal ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Achieved", (object?)s.Achieved ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Mood", (object?)s.Mood ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Energy", (object?)s.Energy ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@FocusScore", (object?)s.FocusScore ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@TempoStart", (object?)s.TempoStart ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@TempoEnd", (object?)s.TempoEnd ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Metronome", (object?)s.Metronome ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Reps", (object?)s.Reps ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Errors", (object?)s.Errors ?? DBNull.Value);
+
         await con.OpenAsync();
         var scalar = await cmd.ExecuteScalarAsync();
         return Convert.ToInt32(scalar);
     }
+
+    public async Task<bool> UpdateAsync(Guid userId, PracticeSession s)
+    {
+        using var con = new SqlConnection(_cs);
+        using var cmd = new SqlCommand("dbo.usp_PracticeSession_Update", con)
+        { CommandType = CommandType.StoredProcedure };
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@SessionId", s.SessionId);
+        cmd.Parameters.AddWithValue("@InstrumentId", s.InstrumentId);
+        cmd.Parameters.AddWithValue("@PracticeDate", s.PracticeDate);
+        cmd.Parameters.AddWithValue("@Minutes", s.Minutes);
+        cmd.Parameters.AddWithValue("@Intensity", s.Intensity);
+        cmd.Parameters.AddWithValue("@Focus", s.Focus);
+        cmd.Parameters.AddWithValue("@Comment", (object?)s.Comment ?? DBNull.Value);
+
+        // nya fält (alla optional)
+        cmd.Parameters.AddWithValue("@PracticeType", (object?)s.PracticeType ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Goal", (object?)s.Goal ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Achieved", (object?)s.Achieved ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Mood", (object?)s.Mood ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Energy", (object?)s.Energy ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@FocusScore", (object?)s.FocusScore ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@TempoStart", (object?)s.TempoStart ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@TempoEnd", (object?)s.TempoEnd ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Metronome", (object?)s.Metronome ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Reps", (object?)s.Reps ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Errors", (object?)s.Errors ?? DBNull.Value);
+
+        await con.OpenAsync();
+        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+        return rows > 0;
+    }
+
 
 
     public async Task<PracticeSession?> GetAsync(Guid userId, int sessionId)
@@ -45,39 +92,29 @@ public class PracticeSessionRepository : IPracticeSessionRepository
 
         return new PracticeSession
         {
-            SessionId = r.GetInt32(r.GetOrdinal("SessionId")),
-            InstrumentId = r.GetInt32(r.GetOrdinal("InstrumentId")),
-            PracticeDate = r.GetDateTime(r.GetOrdinal("PracticeDate")),
-            Minutes = r.GetInt32(r.GetOrdinal("Minutes")),
-            Intensity = r.GetByte(r.GetOrdinal("Intensity")),
-            Focus = r.GetString(r.GetOrdinal("Focus")),
-            Comment = r.IsDBNull(r.GetOrdinal("Comment")) ? null : r.GetString(r.GetOrdinal("Comment")),
-            UserId = userId
+            SessionId = r.GetInt32("SessionId"),
+            InstrumentId = r.GetInt32("InstrumentId"),
+            PracticeDate = r.GetDateTime("PracticeDate"),
+            Minutes = r.GetInt32("Minutes"),
+            Intensity = r.GetByte("Intensity"),
+            Focus = r.GetString("Focus"),
+            Comment = r.IsDBNull("Comment") ? null : r.GetString("Comment"),
+            UserId = userId,
+
+            PracticeType = r.IsDBNull("PracticeType") ? (byte?)null : r.GetByte("PracticeType"),
+            Goal = r.IsDBNull("Goal") ? null : r.GetString("Goal"),
+            Achieved = !r.IsDBNull("Achieved") && r.GetBoolean("Achieved"),
+            Mood = r.IsDBNull("Mood") ? (byte?)null : r.GetByte("Mood"),
+            Energy = r.IsDBNull("Energy") ? (byte?)null : r.GetByte("Energy"),
+            FocusScore = r.IsDBNull("FocusScore") ? (byte?)null : r.GetByte("FocusScore"),
+            TempoStart = r.IsDBNull("TempoStart") ? (short?)null : r.GetInt16("TempoStart"),
+            TempoEnd = r.IsDBNull("TempoEnd") ? (short?)null : r.GetInt16("TempoEnd"),
+            Metronome = r.IsDBNull("Metronome") ? (bool?)null : r.GetBoolean("Metronome"),
+            Reps = r.IsDBNull("Reps") ? (short?)null : r.GetInt16("Reps"),
+            Errors = r.IsDBNull("Errors") ? (short?)null : r.GetInt16("Errors"),
         };
+
     }
-
-
-    public async Task<bool> UpdateAsync(Guid userId, PracticeSession s)
-    {
-        using var con = new SqlConnection(_cs);
-        using var cmd = new SqlCommand("dbo.usp_PracticeSession_Update", con)
-        { CommandType = CommandType.StoredProcedure };
-
-        cmd.Parameters.AddWithValue("@UserId", userId);
-        cmd.Parameters.AddWithValue("@SessionId", s.SessionId);
-        cmd.Parameters.AddWithValue("@InstrumentId", s.InstrumentId);
-        cmd.Parameters.AddWithValue("@PracticeDate", s.PracticeDate);
-        cmd.Parameters.AddWithValue("@Minutes", s.Minutes);
-        cmd.Parameters.AddWithValue("@Intensity", s.Intensity);
-        cmd.Parameters.AddWithValue("@Focus", s.Focus);
-        cmd.Parameters.AddWithValue("@Comment", (object?)s.Comment ?? DBNull.Value);
-
-        await con.OpenAsync();
-        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
-        return rows > 0;
-    }
-
-
 
     public async Task<bool> DeleteAsync(Guid userId, int sessionId)
     {
@@ -104,10 +141,11 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@Query", (object?)query ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@InstrumentId", (object?)instrumentId ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@Sort", sort);
+        cmd.Parameters.AddWithValue("@Sort", sort ?? "date");
         cmd.Parameters.AddWithValue("@Desc", desc);
         cmd.Parameters.AddWithValue("@Page", page);
         cmd.Parameters.AddWithValue("@PageSize", pageSize);
+
 
         await con.OpenAsync();
         using var r = await cmd.ExecuteReaderAsync();
@@ -117,15 +155,20 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         {
             list.Add(new PracticeSessionListItem
             {
-                SessionId = r.GetInt32(r.GetOrdinal("SessionId")),
-                PracticeDate = r.GetDateTime(r.GetOrdinal("PracticeDate")),
-                Minutes = r.GetInt32(r.GetOrdinal("Minutes")),
-                Intensity = (byte)r.GetByte(r.GetOrdinal("Intensity")),
-                Focus = r.GetString(r.GetOrdinal("Focus")),
-                InstrumentId = r.GetInt32(r.GetOrdinal("InstrumentId")),
-                InstrumentName = r.GetString(r.GetOrdinal("InstrumentName"))
+                SessionId = r.GetInt32("SessionId"),
+                PracticeDate = r.GetDateTime("PracticeDate"),
+                Minutes = r.GetInt32("Minutes"),
+                Intensity = r.GetByte("Intensity"),
+                Focus = r.GetString("Focus"),
+                InstrumentId = r.GetInt32("InstrumentId"),
+                InstrumentName = r.GetString("InstrumentName"),
+
+                PracticeType = r.IsDBNull("PracticeType") ? (byte?)null : r.GetByte("PracticeType"),
+                Goal = r.IsDBNull("Goal") ? null : r.GetString("Goal"),
+                Achieved = !r.IsDBNull("Achieved") && r.GetBoolean("Achieved")
             });
         }
+
         return list;
     }
     public async Task<PracticeSummary> GetSummaryAsync(Guid userId, int? instrumentId = null)
