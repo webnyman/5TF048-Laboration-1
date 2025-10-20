@@ -1,0 +1,27 @@
+﻿@using PracticeLogger.Models
+@{
+    var items = PracticeTypeCatalog.Labels;
+}
+
+<div class="card mt-3">
+    <div class="card-body">
+        <h6 class="card-subtitle text-muted mb-2">Passtyper</h6>
+        <table class="table table-sm mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 7rem;">Kod</th>
+                    <th>Beskrivning</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var kv in items.OrderBy(k => k.Key))
+                {
+                    <tr>
+                        <td>@kv.Key</td>
+                        <td>@kv.Value</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

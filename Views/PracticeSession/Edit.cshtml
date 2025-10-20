@@ -1,54 +1,134 @@
-﻿@model PracticeSession
+﻿@model PracticeLogger.Models.PracticeSession
+@using PracticeLogger.Models
+
 @{
     ViewData["Title"] = "Redigera övningspass";
 }
-<h2>Redigera övningspass</h2>
 
-<form asp-action="Edit" method="post" class="row g-3">
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <input type="hidden" asp-for="SessionId" />
 
-    <div class="col-md-3">
-        <label asp-for="PracticeDate" class="form-label"></label>
-        <input asp-for="PracticeDate" class="form-control" />
-        <span asp-validation-for="PracticeDate" class="text-danger"></span>
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label asp-for="PracticeDate" class="form-label">Datum</label>
+            <input asp-for="PracticeDate" class="form-control" type="date" />
+            <span asp-validation-for="PracticeDate" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-5">
+            <label class="form-label">Instrument</label>
+            <select asp-for="InstrumentId" class="form-select" asp-items="ViewBag.Instruments"></select>
+            <span asp-validation-for="InstrumentId" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-2">
+            <label asp-for="Minutes" class="form-label">Minuter</label>
+            <input asp-for="Minutes" class="form-control" type="number" min="1" max="600" />
+            <span asp-validation-for="Minutes" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-2">
+            <label asp-for="Intensity" class="form-label">Intensitet (1–5)</label>
+            <input asp-for="Intensity" class="form-control" type="number" min="1" max="5" />
+            <span asp-validation-for="Intensity" class="text-danger"></span>
+        </div>
+
+        <div class="col-12">
+            <label asp-for="Focus" class="form-label">Fokus</label>
+            <input asp-for="Focus" class="form-control" />
+            <span asp-validation-for="Focus" class="text-danger"></span>
+        </div>
+
+        <!-- Passtyp + mål -->
+        <div class="col-md-4">
+            <label class="form-label">Passtyp</label>
+            <select asp-for="PracticeType" class="form-select"
+                    asp-items="@(new SelectList(PracticeTypeCatalog.ToSelectList(Model.PracticeType)))">
+            </select>
+            <span asp-validation-for="PracticeType" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-8">
+            <label asp-for="Goal" class="form-label">Mål</label>
+            <input asp-for="Goal" class="form-control" />
+            <span asp-validation-for="Goal" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-check mt-4">
+                <input asp-for="Achieved" class="form-check-input" type="checkbox" />
+                <label asp-for="Achieved" class="form-check-label">Målet uppnått</label>
+            </div>
+            <span asp-validation-for="Achieved" class="text-danger"></span>
+        </div>
+
+        <!-- Känslotillstånd -->
+        <div class="col-md-2">
+            <label asp-for="Mood" class="form-label">Humör (1–5)</label>
+            <input asp-for="Mood" class="form-control" type="number" min="1" max="5" />
+            <span asp-validation-for="Mood" class="text-danger"></span>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="Energy" class="form-label">Energi (1–5)</label>
+            <input asp-for="Energy" class="form-control" type="number" min="1" max="5" />
+            <span asp-validation-for="Energy" class="text-danger"></span>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="FocusScore" class="form-label">Fokus (1–5)</label>
+            <input asp-for="FocusScore" class="form-control" type="number" min="1" max="5" />
+            <span asp-validation-for="FocusScore" class="text-danger"></span>
+        </div>
+
+        <!-- Tempo -->
+        <div class="col-md-2">
+            <label asp-for="TempoStart" class="form-label">Tempo start</label>
+            <input asp-for="TempoStart" class="form-control" type="number" min="20" max="400" />
+            <span asp-validation-for="TempoStart" class="text-danger"></span>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="TempoEnd" class="form-label">Tempo slut</label>
+            <input asp-for="TempoEnd" class="form-control" type="number" min="20" max="400" />
+            <span asp-validation-for="TempoEnd" class="text-danger"></span>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <div class="form-check">
+                <input asp-for="Metronome" class="form-check-input" type="checkbox" />
+                <label asp-for="Metronome" class="form-check-label">Metronom</label>
+            </div>
+            <span asp-validation-for="Metronome" class="text-danger d-block"></span>
+        </div>
+
+        <!-- Reps/Errors -->
+        <div class="col-md-2">
+            <label asp-for="Reps" class="form-label">Reps</label>
+            <input asp-for="Reps" class="form-control" type="number" min="0" max="1000" />
+            <span asp-validation-for="Reps" class="text-danger"></span>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="Errors" class="form-label">Fel</label>
+            <input asp-for="Errors" class="form-control" type="number" min="0" max="1000" />
+            <span asp-validation-for="Errors" class="text-danger"></span>
+        </div>
+
+        <div class="col-12">
+            <label asp-for="Comment" class="form-label">Kommentar</label>
+            <textarea asp-for="Comment" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Comment" class="text-danger"></span>
+        </div>
     </div>
 
-    <div class="col-md-4">
-        <label for="InstrumentId" class="form-label">Instrument</label>
-        <select asp-for="InstrumentId" asp-items="@(ViewBag.Instruments)" class="form-select"></select>
-        <span asp-validation-for="InstrumentId" class="text-danger"></span>
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Spara ändringar</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Avbryt</a>
     </div>
 
-    <div class="col-md-2">
-        <label asp-for="Minutes" class="form-label"></label>
-        <input asp-for="Minutes" class="form-control" />
-        <span asp-validation-for="Minutes" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-2">
-        <label asp-for="Intensity" class="form-label"></label>
-        <input asp-for="Intensity" class="form-control" />
-        <span asp-validation-for="Intensity" class="text-danger"></span>
-    </div>
-
-    <div class="col-12">
-        <label asp-for="Focus" class="form-label"></label>
-        <input asp-for="Focus" class="form-control" />
-        <span asp-validation-for="Focus" class="text-danger"></span>
-    </div>
-
-    <div class="col-12">
-        <label asp-for="Comment" class="form-label"></label>
-        <textarea asp-for="Comment" class="form-control" rows="3"></textarea>
-        <span asp-validation-for="Comment" class="text-danger"></span>
-    </div>
-
-    <div class="col-12">
-        <button type="submit" class="btn btn-primary">Spara</button>
-        <a asp-action="Index" class="btn btn-secondary">Tillbaka</a>
-    </div>
+    @await Html.PartialAsync("_PracticeTypeLegend")
 </form>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    @await Html.PartialAsync("_ValidationScriptsPartial")
 }
