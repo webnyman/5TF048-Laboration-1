@@ -134,50 +134,85 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         using var cmd = new SqlCommand("dbo.usp_PracticeSessions_Summary", con)
         { CommandType = CommandType.StoredProcedure };
 
-        cmd.Parameters.AddWithValue("@UserId", userId);                         // ⬅️ nytt
+        cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@InstrumentId", (object?)instrumentId ?? DBNull.Value);
 
         await con.OpenAsync();
         using var r = await cmd.ExecuteReaderAsync();
 
-        var totalMinutes = 0;
-        var distinctDays = 0;
-        var entriesCount = 0;
+        var summary = new PracticeSummary();
 
+        // 1) Totals: TotalMinutes, DistinctDays, EntriesCount
         if (await r.ReadAsync())
         {
-            totalMinutes = r.IsDBNull(0) ? 0 : r.GetInt32(0);
-            distinctDays = r.IsDBNull(1) ? 0 : r.GetInt32(1);
-            entriesCount = r.IsDBNull(2) ? 0 : r.GetInt32(2);
+            summary.TotalMinutes = r.IsDBNull(0) ? 0 : r.GetInt32(0);
+            summary.DistinctActiveDays = r.IsDBNull(1) ? 0 : r.GetInt32(1);
+            summary.EntriesCount = r.IsDBNull(2) ? 0 : r.GetInt32(2);
+        }
+        summary.AvgPerDay = summary.DistinctActiveDays == 0
+            ? 0
+            : Math.Round((double)summary.TotalMinutes / summary.DistinctActiveDays, 1);
+
+        // 2) Minutes per instrument: (InstrumentName nvarchar, Minutes int)
+        await r.NextResultAsync();
+        var byInstrument = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        while (await r.ReadAsync())
+        {
+            var name = r.GetString(0);
+            var minutes = r.GetInt32(1);
+            byInstrument[name] = minutes;
+        }
+        summary.MinutesPerInstrument = byInstrument;
+
+        // 3) Minutes per intensity: (Intensity tinyint, Minutes int)
+        await r.NextResultAsync();
+        var byIntensity = new Dictionary<int, int>();
+        while (await r.ReadAsync())
+        {
+            var intensity = r.GetByte(0);   // TINYINT
+            var minutes = r.GetInt32(1);
+            byIntensity[intensity] = minutes;
+        }
+        // Fyll luckor 1..5
+        for (int i = 1; i <= 5; i++)
+            if (!byIntensity.ContainsKey(i)) byIntensity[i] = 0;
+        summary.MinutesPerIntensity = byIntensity
+            .OrderBy(kv => kv.Key)
+            .ToDictionary(k => k.Key, v => v.Value);
+
+        // 4) Minutes per practice type: (PracticeType tinyint, Minutes int)
+        await r.NextResultAsync();
+        if (!r.IsClosed)
+        {
+            var byType = new Dictionary<byte, int>();
+            while (await r.ReadAsync())
+            {
+                var pt = r.GetByte(0);
+                var minutes = r.GetInt32(1);
+                byType[pt] = minutes;
+            }
+            summary.MinutesPerPracticeType = byType;
         }
 
-        var minutesPerInstrument = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        // 5) Tempo stats: (PassWithTempo int, AvgTempoDelta float)
         await r.NextResultAsync();
-        while (await r.ReadAsync())
-            minutesPerInstrument[r.GetString(0)] = r.GetInt32(1);
-
-        var minutesPerIntensity = new Dictionary<int, int>();
-        await r.NextResultAsync();
-        while (await r.ReadAsync())
-            minutesPerIntensity[r.GetByte(0)] = r.GetInt32(1);
-
-        for (int i = 1; i <= 5; i++)
-            if (!minutesPerIntensity.ContainsKey(i)) minutesPerIntensity[i] = 0;
-
-        var avgPerDay = distinctDays == 0 ? 0 : Math.Round((double)totalMinutes / distinctDays, 1);
-
-        return new PracticeSummary
+        if (!r.IsClosed && await r.ReadAsync())
         {
-            TotalMinutes = totalMinutes,
-            AvgPerDay = avgPerDay,
-            MinutesPerInstrument = minutesPerInstrument,
-            MinutesPerIntensity = minutesPerIntensity
-                                    .OrderBy(kv => kv.Key)
-                                    .ToDictionary(k => k.Key, v => v.Value),
-            DistinctActiveDays = distinctDays,
-            EntriesCount = entriesCount
-        };
+            summary.PassWithTempo = r.IsDBNull(0) ? 0 : r.GetInt32(0);
+            summary.AvgTempoDelta = r.IsDBNull(1) ? (double?)null : r.GetDouble(1);
+        }
+
+        // 6) Mood/Energy: (AvgMood float, AvgEnergy float)
+        await r.NextResultAsync();
+        if (!r.IsClosed && await r.ReadAsync())
+        {
+            summary.AvgMood = r.IsDBNull(0) ? (double?)null : r.GetDouble(0);
+            summary.AvgEnergy = r.IsDBNull(1) ? (double?)null : r.GetDouble(1);
+        }
+
+        return summary;
     }
+
 
 
 }

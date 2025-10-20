@@ -38,5 +38,12 @@ namespace PracticeLogger.Models
         /// Gets or sets the total number of practice entries.
         /// </summary>
         public int EntriesCount { get; set; }
+
+        // Nya (för result set 4–6)
+        public Dictionary<byte, int> MinutesPerPracticeType { get; set; } = new(); // 1–6
+        public int PassWithTempo { get; set; }
+        public double? AvgTempoDelta { get; set; } // TempoEnd-TempoStart, null om inget
+        public double? AvgMood { get; set; }       // 1–5
+        public double? AvgEnergy { get; set; }     // 1–5
     }
 }

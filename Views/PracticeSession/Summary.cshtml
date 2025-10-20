@@ -1,4 +1,5 @@
 ﻿@model PracticeSummary
+@using PracticeLogger.Models
 @{
     ViewData["Title"] = "Summering";
     var filter = ViewBag.Filter as string;
@@ -118,4 +119,58 @@ else
             }
         </tbody>
     </table>
+
+    <!-- NY: Tabell minuter per passtyp -->
+    @if (Model.MinutesPerPracticeType != null && Model.MinutesPerPracticeType.Any())
+    {
+        <h4 class="mt-4">Minuter per passtyp</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr><th>Passtyp</th><th>Minuter</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var kv in Model.MinutesPerPracticeType.OrderBy(k => k.Key))
+                {
+                    var label = Enum.IsDefined(typeof(PracticeType), (byte)kv.Key)
+                    ? ((PracticeType)kv.Key).Label()
+                    : $"Typ {kv.Key}";
+                    <tr><td>@label</td><td>@kv.Value</td></tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <!-- NY: Tempo-statistik -->
+    @if (Model.PassWithTempo > 0)
+    {
+        <h4 class="mt-4">Tempo</h4>
+        <table class="table table-striped w-auto">
+            <thead>
+                <tr><th>Pass med tempo</th><th>Snitt förbättring (bpm)</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@Model.PassWithTempo</td>
+                    <td>@(Model.AvgTempoDelta?.ToString("0.0") ?? "-")</td>
+                </tr>
+            </tbody>
+        </table>
+    }
+
+    <!-- NY: Mood/Energy -->
+    @if (Model.AvgMood.HasValue || Model.AvgEnergy.HasValue)
+    {
+        <h4 class="mt-4">Känslotillstånd</h4>
+        <table class="table table-striped w-auto">
+            <thead>
+                <tr><th>Snitt humör (1–5)</th><th>Snitt energi (1–5)</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@(Model.AvgMood?.ToString("0.0") ?? "-")</td>
+                    <td>@(Model.AvgEnergy?.ToString("0.0") ?? "-")</td>
+                </tr>
+            </tbody>
+        </table>
+    }
 }
