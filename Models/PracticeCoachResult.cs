@@ -10,5 +10,6 @@
         public double? AvgTempoDelta { get; set; } // kan vara null om för få datapunkter
         public int DaysActive { get; set; }
         public List<string> Tips { get; set; } = new();
+        public List<NextWeekPlanItem> NextWeekPlan { get; set; } = new();
     }
 }

@@ -51,6 +51,78 @@ public class RuleCoachService : IRuleCoachService
         if (sessions.Select(s => s.PracticeDate.Date).Distinct().Count() < Math.Min(5, sessions.Count))
             res.Tips.Add("Öva mer regelbundet (kortare dagliga pass slår längre sporadiska).");
 
+        // === NÄSTA VECKA-PLAN (3–4 pass) ===
+        var hasTempo = withTempo.Any();
+        int baseMinutes = (int)Math.Round(Math.Max(20, res.AvgMinutes)); // minst 20 min
+        int baseIntensity = (int)Math.Round(Math.Clamp(res.AvgIntensity, 2, 4)); // håll lagom fokus
+
+        // Hitta ett “senaste” tempo som referens (eller null om saknas)
+        int? lastTempo = withTempo
+            .OrderByDescending(s => s.PracticeDate)
+            .Select(s => s.TempoEnd ?? s.TempoStart)
+            .FirstOrDefault();
+
+        // Hjälpfunktion för veckodagar
+        string[] days = { "Mån", "Ons", "Fre", "Sön" };
+        int di = 0;
+        string NextDay() => days[di++ % days.Length];
+
+        // 1) Teknik + metronom (tempo progression om möjligt)
+        res.NextWeekPlan.Add(new NextWeekPlanItem
+        {
+            Day = NextDay(),
+            Focus = "Teknik – skalor/intonation",
+            Minutes = baseMinutes,
+            Intensity = Math.Clamp(baseIntensity + 1, 2, 5),
+            Metronome = true,
+            TempoTarget = hasTempo && lastTempo.HasValue ? lastTempo.Value + 2 : null,
+            Notes = hasTempo
+                ? "Block: 4×(6–8 rep) med +2 BPM mellan block. Sänk om felfrekvens >20%."
+                : "Jobba i korta loopar (6–8 rep) och håll jämn timing. Lägg till metronom framöver."
+        });
+
+        // 2) Musikaliskt fokus + mål (öka måluppfyllelse)
+        res.NextWeekPlan.Add(new NextWeekPlanItem
+        {
+            Day = NextDay(),
+            Focus = "Musikalitet – frasering / dynamik",
+            Minutes = baseMinutes,
+            Intensity = baseIntensity,
+            Metronome = false,
+            TempoTarget = null,
+            Notes = "Sätt ett mätbart mål (t.ex. fras X utan andnöd + stabil intonation). Spela in & utvärdera."
+        });
+
+        // 3) Felreduktion (om fel/rep varit hög)
+        if (manyErrors.Any() && manyErrors.Average() > 0.2)
+        {
+            res.NextWeekPlan.Add(new NextWeekPlanItem
+            {
+                Day = NextDay(),
+                Focus = "Felreduktion – loopa svåra takter",
+                Minutes = baseMinutes - 5,
+                Intensity = Math.Max(2, baseIntensity - 1),
+                Metronome = true,
+                TempoTarget = hasTempo && lastTempo.HasValue ? Math.Max(40, lastTempo.Value - 4) : null,
+                Notes = "Bryt ner i små segment (1–2 takter), 5–7 rep/segment, långsam tempoökning när felfrekvens <10%."
+            });
+        }
+
+        // 4) Uthållighet eller kvalitetspass (beroende på snitt)
+        res.NextWeekPlan.Add(new NextWeekPlanItem
+        {
+            Day = NextDay(),
+            Focus = res.AvgMinutes < 20 ? "Uthållighet – längre kvalitetspass" : "Kvalitet – precision & klang",
+            Minutes = res.AvgMinutes < 20 ? baseMinutes + 10 : baseMinutes,
+            Intensity = Math.Clamp(baseIntensity, 2, 4),
+            Metronome = true,
+            TempoTarget = hasTempo && lastTempo.HasValue ? lastTempo.Value + (res.AvgMinutes < 20 ? 3 : 1) : null,
+            Notes = res.AvgMinutes < 20
+                ? "Målet är längre sammanhängande fokus. Planera 2–3 delblock med kort vila."
+                : "Finputsa detaljer på favoritstycke; lyssna aktivt på klang och avslut."
+        });
+
+
         return res;
     }
 }

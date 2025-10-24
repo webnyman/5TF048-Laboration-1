@@ -39,4 +39,36 @@ else
             }
         </ul>
     }
+    @if (Model.NextWeekPlan?.Any() == true)
+    {
+        <h4 class="mt-4">Förbättra nästa vecka – förslag</h4>
+        <table class="table table-bordered align-middle">
+            <thead>
+                <tr>
+                    <th>Dag</th>
+                    <th>Fokus</th>
+                    <th style="width:100px">Min</th>
+                    <th style="width:110px">Intensitet</th>
+                    <th style="width:120px">Metronom</th>
+                    <th style="width:140px">Tempo-mål</th>
+                    <th>Anteckningar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.NextWeekPlan)
+                {
+                    <tr>
+                        <td>@p.Day</td>
+                        <td>@p.Focus</td>
+                        <td>@p.Minutes</td>
+                        <td>@p.Intensity</td>
+                        <td>@(p.Metronome ? "Ja" : "Nej")</td>
+                        <td>@(p.TempoTarget.HasValue ? $"{p.TempoTarget.Value} BPM" : "—")</td>
+                        <td>@p.Notes</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
 }
