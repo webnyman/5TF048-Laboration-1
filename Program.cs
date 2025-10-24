@@ -56,10 +56,6 @@ builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
 
 builder.Services.AddSingleton<IEmailSender, DevMailSender>();
 
-builder.Services.AddScoped<IMlAnalysisService, MlAnalysisService>();
-
-
-
 var app = builder.Build();
 
 // 4) Felhantering
