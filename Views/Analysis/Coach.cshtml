@@ -1,0 +1,42 @@
+﻿@model PracticeLogger.Models.PracticeCoachResult
+@{
+    ViewData["Title"] = "AI-coach (regelbaserad)";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (Model.TotalSessions == 0)
+{
+    <div class="alert alert-info">Inga pass ännu – logga några pass först.</div>
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-md-2"><div class="card p-3"><div class="small text-muted">Pass</div><div class="h4">@Model.TotalSessions</div></div></div>
+        <div class="col-md-2"><div class="card p-3"><div class="small text-muted">Minuter</div><div class="h4">@Model.TotalMinutes</div></div></div>
+        <div class="col-md-2"><div class="card p-3"><div class="small text-muted">Min/p</div><div class="h4">@Model.AvgMinutes</div></div></div>
+        <div class="col-md-2"><div class="card p-3"><div class="small text-muted">Intensitet</div><div class="h4">@Model.AvgIntensity</div></div></div>
+        <div class="col-md-2"><div class="card p-3"><div class="small text-muted">Måluppfyllnad</div><div class="h4">@String.Format("{0:F0}%", Model.GoalHitRate * 100)</div></div></div>
+        <div class="col-md-2"><div class="card p-3"><div class="small text-muted">Dagar aktiva</div><div class="h4">@Model.DaysActive</div></div></div>
+    </div>
+
+    @if (Model.AvgTempoDelta.HasValue)
+    {
+        <p class="mt-2 text-muted">Genomsnittlig tempoökning: <strong>@Model.AvgTempoDelta.Value:F1</strong> BPM/pass (bland pass med tempo).</p>
+    }
+
+    <h4 class="mt-4">Rekommendationer</h4>
+    @if (Model.Tips.Count == 0)
+    {
+        <p>Ser bra ut! Fortsätt som du gör – du har en stabil rutin.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var tip in Model.Tips)
+            {
+                <li class="list-group-item">✅ @tip</li>
+            }
+        </ul>
+    }
+}

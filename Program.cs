@@ -56,6 +56,9 @@ builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
 
 builder.Services.AddSingleton<IEmailSender, DevMailSender>();
 
+builder.Services.AddScoped<IRuleCoachService, RuleCoachService>();
+
+
 var app = builder.Build();
 
 // 4) Felhantering
