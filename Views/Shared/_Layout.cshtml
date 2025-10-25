@@ -35,10 +35,12 @@
                             <a class="nav-link text-dark" asp-controller="Analysis" asp-action="Coach">🤖 AI-coach</a>
                         </li>
 
-
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Instrument" asp-action="Index">🎺 Instrument</a>
-                        </li>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Instrument" asp-action="Index">🎺 Instrument</a>
+                            </li>
+                        }
                     </ul>
 
                     <!-- Höger meny: Auth -->
