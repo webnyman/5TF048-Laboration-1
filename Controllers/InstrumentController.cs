@@ -20,12 +20,12 @@ public class InstrumentController : Controller
     }
 
     // CREATE (GET)
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = "RequireAdmin")]
     public IActionResult Create() => View(new Instrument());
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = "RequireAdmin")]
     public async Task<IActionResult> Create(Instrument instrument)
     {
         if (!ModelState.IsValid) return View(instrument);
@@ -46,7 +46,7 @@ public class InstrumentController : Controller
 
 
     // EDIT (GET)
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = "RequireAdmin")]
     public async Task<IActionResult> Edit(int id)
     {
         var item = await _repo.GetAsync(id);
@@ -55,7 +55,7 @@ public class InstrumentController : Controller
 
     // EDIT (POST)
     [HttpPost, ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = "RequireAdmin")]
     public async Task<IActionResult> Edit(Instrument model)
     {
         if (!ModelState.IsValid) return View(model);
@@ -76,7 +76,7 @@ public class InstrumentController : Controller
 
     // DELETE (POST)
     [HttpPost, ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = "RequireAdmin")]
     public async Task<IActionResult> Delete(int id)
     {
         try

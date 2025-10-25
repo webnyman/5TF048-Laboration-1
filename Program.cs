@@ -24,6 +24,12 @@ builder.Services
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+});
+
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     // Vart skickas man vid 401 (ej inloggad)?
@@ -90,16 +96,5 @@ app.MapRazorPages();
 
 app.MapGet("/Account/Login", () => Results.Redirect("/Identity/Account/Login"));
 app.MapGet("/Account/Register", () => Results.Redirect("/Identity/Account/Register"));
-
-
-// 7) (valfritt) Seed – ALLTID före Run(), i scope
-// using (var scope = app.Services.CreateScope())
-// {
-//     var sp = scope.ServiceProvider;
-//     await IdentitySeeder.SeedAsync(sp);
-// }
-
-await AdminSeeder.EnsureAdminAsync(app.Services);
-
 
 app.Run();

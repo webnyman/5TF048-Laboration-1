@@ -1,0 +1,55 @@
+﻿@using PracticeLogger.Models
+@model List<(ApplicationUser User, System.Collections.Generic.IList<string> Roles)>
+@{
+    ViewData["Title"] = "Admin – Användare";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Flash"] != null)
+{
+    <div class="alert alert-info">@TempData["Flash"]</div>
+}
+
+<table class="table table-striped align-middle mt-3">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Visningsnamn</th>
+            <th>Roller</th>
+            <th class="text-end"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var row in Model)
+        {
+            var u = row.User;
+            var roles = string.Join(", ", row.Roles ?? new List<string>());
+            bool isAdmin = row.Roles?.Contains("Admin") == true;
+
+            <tr>
+                <td>@u.Email</td>
+                <td>@(string.IsNullOrWhiteSpace(u.DisplayName) ? "—" : u.DisplayName)</td>
+                <td>@(string.IsNullOrWhiteSpace(roles) ? "—" : roles)</td>
+                <td class="text-end">
+                    @if (!isAdmin)
+                    {
+                        <form asp-action="GrantAdmin" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@u.Id" />
+                            <button class="btn btn-sm btn-outline-primary">Gör till Admin</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="RevokeAdmin" method="post" class="d-inline" onsubmit="return confirm('Ta bort Admin-roll?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@u.Id" />
+                            <button class="btn btn-sm btn-outline-danger">Ta bort Admin</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
