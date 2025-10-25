@@ -99,4 +99,7 @@ app.MapGet("/Account/Register", () => Results.Redirect("/Identity/Account/Regist
 //     await IdentitySeeder.SeedAsync(sp);
 // }
 
+await AdminSeeder.EnsureAdminAsync(app.Services);
+
+
 app.Run();

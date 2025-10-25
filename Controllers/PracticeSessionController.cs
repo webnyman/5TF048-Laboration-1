@@ -51,6 +51,9 @@ public class PracticeSessionController : Controller
         ViewBag.Page = page;
         ViewBag.PageSize = pageSize;
 
+        ViewBag.HasPrev = page > 1;
+        ViewBag.HasNext = items.Count() == pageSize;
+
         var instruments = await _instrumentRepo.GetAllAsync();
         ViewBag.Instruments = new SelectList(instruments, "InstrumentId", "Name", instrumentId);
 
@@ -137,18 +140,20 @@ public class PracticeSessionController : Controller
     }
 
     // SUMMARY
-    public async Task<IActionResult> Summary(int? instrumentId)
+    public async Task<IActionResult> Summary(int? instrumentId, DateTime? from, DateTime? to)
     {
         var userId = CurrentUserId();
-        var model = await _sessionRepo.GetSummaryAsync(userId, instrumentId); // 👈 filtrera på användare
+        var model = await _sessionRepo.GetSummaryAsync(userId, instrumentId, from, to);
 
         var instruments = await _instrumentRepo.GetAllAsync();
         ViewBag.Instruments = new SelectList(instruments, "InstrumentId", "Name", instrumentId);
-        ViewBag.Filter = instrumentId.HasValue
-            ? instruments.FirstOrDefault(i => i.InstrumentId == instrumentId)?.Name
-            : null;
 
-        ViewData["Info"] = "Denna vy använder PracticeSummary från databasen.";
+        ViewBag.FilterText = string.Join(" · ", new[]{
+        instrumentId.HasValue ? instruments.FirstOrDefault(i => i.InstrumentId == instrumentId)?.Name : null,
+        from.HasValue ? $"från {from:yyyy-MM-dd}" : null,
+        to.HasValue   ? $"till {to:yyyy-MM-dd}"   : null
+    }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
         return View(model);
     }
 
@@ -158,4 +163,23 @@ public class PracticeSessionController : Controller
         var instruments = await _instrumentRepo.GetAllAsync();
         ViewBag.Instruments = new SelectList(instruments, "InstrumentId", "Name", selectedId);
     }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SummarySelected([FromForm] int[] selectedIds)
+    {
+        if (selectedIds == null || selectedIds.Length == 0)
+        {
+            TempData["Flash"] = "Välj minst ett pass.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var userId = CurrentUserId();
+        var model = await _sessionRepo.GetSummaryByIdsAsync(userId, selectedIds);
+
+        // Du kan återanvända Summary-vyn, eller ha en separat vy.
+        ViewBag.Filter = $"Valda pass: {selectedIds.Length} st";
+        return View("Summary", model);
+    }
+
 }

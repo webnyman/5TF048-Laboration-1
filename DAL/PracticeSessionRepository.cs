@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Humanizer;
+using Microsoft.Data.SqlClient;
 using PracticeLogger.DAL;
 using PracticeLogger.Models;
 using System.Data;
@@ -171,7 +172,7 @@ public class PracticeSessionRepository : IPracticeSessionRepository
 
         return list;
     }
-    public async Task<PracticeSummary> GetSummaryAsync(Guid userId, int? instrumentId = null)
+    public async Task<PracticeSummary> GetSummaryAsync(Guid userId, int? instrumentId = null, DateTime? from = null, DateTime? to = null)
     {
         using var con = new SqlConnection(_cs);
         using var cmd = new SqlCommand("dbo.usp_PracticeSessions_Summary", con)
@@ -179,6 +180,9 @@ public class PracticeSessionRepository : IPracticeSessionRepository
 
         cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@InstrumentId", (object?)instrumentId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@From", (object?)from ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@To", (object?)to ?? DBNull.Value);
+
 
         await con.OpenAsync();
         using var r = await cmd.ExecuteReaderAsync();
@@ -212,7 +216,9 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         var byIntensity = new Dictionary<int, int>();
         while (await r.ReadAsync())
         {
-            var intensity = r.GetByte(0);   // TINYINT
+            var intensity = r.GetFieldType(0) == typeof(byte)
+                ? r.GetByte(0)
+                : (byte)r.GetInt32(0);
             var minutes = r.GetInt32(1);
             byIntensity[intensity] = minutes;
         }
@@ -225,16 +231,14 @@ public class PracticeSessionRepository : IPracticeSessionRepository
 
         // 4) Minutes per practice type: (PracticeType tinyint, Minutes int)
         await r.NextResultAsync();
-        if (!r.IsClosed)
+        var byType = new Dictionary<byte, int>();
+        while (await r.ReadAsync())
         {
-            var byType = new Dictionary<byte, int>();
-            while (await r.ReadAsync())
-            {
-                var pt = r.GetByte(0);
-                var minutes = r.GetInt32(1);
-                byType[pt] = minutes;
-            }
-            summary.MinutesPerPracticeType = byType;
+            byte pt = r.GetFieldType(0) == typeof(byte)
+                ? r.GetByte(0)
+                : (byte)r.GetInt32(0);
+            var minutes = r.GetInt32(1);
+            byType[pt] = minutes;
         }
 
         // 5) Tempo stats: (PassWithTempo int, AvgTempoDelta float)
@@ -256,6 +260,98 @@ public class PracticeSessionRepository : IPracticeSessionRepository
         return summary;
     }
 
+    public async Task<PracticeSummary> GetSummaryByIdsAsync(Guid userId, IEnumerable<int> sessionIds)
+    {
+        using var con = new SqlConnection(_cs);
+        await con.OpenAsync();
+
+        // TVP som DataTable
+        var tvp = new DataTable();
+        tvp.Columns.Add("Id", typeof(int));
+        foreach (var id in sessionIds.Distinct()) tvp.Rows.Add(id);
+
+        using var cmd = new SqlCommand("dbo.usp_PracticeSessions_SummaryByIds", con)
+        { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.AddWithValue("@UserId", userId);
+
+        var p = cmd.Parameters.AddWithValue("@Ids", tvp);
+        p.SqlDbType = SqlDbType.Structured;
+        p.TypeName = "dbo.IntIdList";
+
+        using var r = await cmd.ExecuteReaderAsync();
+
+        var summary = new PracticeSummary();
+
+        // 1) Totals: TotalMinutes, DistinctDays, EntriesCount
+        if (await r.ReadAsync())
+        {
+            summary.TotalMinutes = r.IsDBNull(0) ? 0 : r.GetInt32(0);
+            summary.DistinctActiveDays = r.IsDBNull(1) ? 0 : r.GetInt32(1);
+            summary.EntriesCount = r.IsDBNull(2) ? 0 : r.GetInt32(2);
+        }
+        summary.AvgPerDay = summary.DistinctActiveDays == 0
+            ? 0
+            : Math.Round((double)summary.TotalMinutes / summary.DistinctActiveDays, 1);
+
+        // 2) Minutes per instrument: (InstrumentName nvarchar, Minutes int)
+        await r.NextResultAsync();
+        var byInstrument = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        while (await r.ReadAsync())
+        {
+            var name = r.GetString(0);
+            var minutes = r.GetInt32(1);
+            byInstrument[name] = minutes;
+        }
+        summary.MinutesPerInstrument = byInstrument;
+
+        // 3) Minutes per intensity: (Intensity tinyint, Minutes int)
+        await r.NextResultAsync();
+        var byIntensity = new Dictionary<int, int>();
+        while (await r.ReadAsync())
+        {
+            var intensity = r.GetFieldType(0) == typeof(byte)
+                ? r.GetByte(0)
+                : (byte)r.GetInt32(0);
+            var minutes = r.GetInt32(1);
+            byIntensity[intensity] = minutes;
+        }
+        // Fyll luckor 1..5
+        for (int i = 1; i <= 5; i++)
+            if (!byIntensity.ContainsKey(i)) byIntensity[i] = 0;
+        summary.MinutesPerIntensity = byIntensity
+            .OrderBy(kv => kv.Key)
+            .ToDictionary(k => k.Key, v => v.Value);
+
+        // 4) Minutes per practice type: (PracticeType tinyint, Minutes int)
+        await r.NextResultAsync();
+        var byType = new Dictionary<byte, int>();
+        while (await r.ReadAsync())
+        {
+            byte pt = r.GetFieldType(0) == typeof(byte)
+                ? r.GetByte(0)
+                : (byte)r.GetInt32(0);
+            var minutes = r.GetInt32(1);
+            byType[pt] = minutes;
+        }
+
+        // 5) Tempo stats: (PassWithTempo int, AvgTempoDelta float)
+        await r.NextResultAsync();
+        if (!r.IsClosed && await r.ReadAsync())
+        {
+            summary.PassWithTempo = r.IsDBNull(0) ? 0 : r.GetInt32(0);
+            summary.AvgTempoDelta = r.IsDBNull(1) ? (double?)null : r.GetDouble(1);
+        }
+
+        // 6) Mood/Energy: (AvgMood float, AvgEnergy float)
+        await r.NextResultAsync();
+        if (!r.IsClosed && await r.ReadAsync())
+        {
+            summary.AvgMood = r.IsDBNull(0) ? (double?)null : r.GetDouble(0);
+            summary.AvgEnergy = r.IsDBNull(1) ? (double?)null : r.GetDouble(1);
+        }
+
+        return summary;
+    }
 
 
 }

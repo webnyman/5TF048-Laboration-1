@@ -12,6 +12,7 @@
     <a asp-action="Summary" class="btn btn-outline-secondary">🧾 Summering</a>
 </div>
 
+<!-- 🔍 Filter/sökformulär (GET) -->
 <form asp-action="Index" method="get" class="row g-2 mb-3">
     <div class="col-auto">
         <input type="text" name="q" class="form-control" placeholder="Sök i fokus" value="@ViewBag.Query" />
@@ -33,54 +34,122 @@
 }
 else
 {
-    <table class="table table-striped align-middle">
-        <thead>
-            <tr>
-                <th>Datum</th>
-                <th>Instrument</th>
-                <th>Passtyp</th>
-                <th>Fokus</th>
-                <th>Minuter</th>
-                <th>Intensitet</th>
-                <th>Mål</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var s in Model)
-            {
-                var label = PracticeTypeCatalog.Labels.TryGetValue(s.PracticeType ?? 0, out var lbl) ? lbl : "-";
+    <!-- ✅ Formulär för att summera valda -->
+    <form asp-action="SummarySelected" method="post" class="mb-3">
+        @Html.AntiForgeryToken()
+
+        <table class="table table-striped align-middle">
+            <thead>
                 <tr>
-                    <td>@s.PracticeDate.ToString("yyyy-MM-dd")</td>
-                    <td>@s.InstrumentName</td>
-                    <td>@label</td>
-                    <td>@s.Focus</td>
-                    <td>@s.Minutes</td>
-                    <td>@s.Intensity</td>
-                    <td>
-                        @if (s.Achieved)
-                        {
-                            <span class="badge bg-success">✅</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">—</span>
-                        }
-                    </td>
-                    <td class="text-end">
-                        <a asp-action="Details" asp-route-id="@s.SessionId" class="btn btn-sm btn-outline-info">Visa</a>
-                        <a asp-action="Edit" asp-route-id="@s.SessionId" class="btn btn-sm btn-outline-primary">Redigera</a>
-                        <form asp-action="Delete" method="post" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@s.SessionId" />
-                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                    <th></th>
+                    <th>Datum</th>
+                    <th>Instrument</th>
+                    <th>Passtyp</th>
+                    <th>Fokus</th>
+                    <th>Minuter</th>
+                    <th>Intensitet</th>
+                    <th>Mål</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var session in Model)
+                {
+                    var label = PracticeTypeCatalog.Labels.TryGetValue(session.PracticeType ?? 0, out var lbl)
+                    ? lbl
+                    : "-";
+
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="selectedIds" value="@session.SessionId" />
+                        </td>
+                        <td>@session.PracticeDate.ToString("yyyy-MM-dd")</td>
+                        <td>@session.InstrumentName</td>
+                        <td>@label</td>
+                        <td>@session.Focus</td>
+                        <td>@session.Minutes</td>
+                        <td>@session.Intensity</td>
+                        <td>
+                            @if (session.Achieved)
+                            {
+                                <span class="badge bg-success">✅</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">—</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@session.SessionId" class="btn btn-sm btn-outline-info">Visa</a>
+                            <a asp-action="Edit" asp-route-id="@session.SessionId" class="btn btn-sm btn-outline-primary">Redigera</a>
+
+                            <!-- Ingen nested form längre -->
+                            <button type="submit"
+                                    form="del-@session.SessionId"
+                                    class="btn btn-sm btn-outline-danger"
                                     onclick="return confirm('Vill du verkligen radera detta pass?');">
                                 Radera
                             </button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-outline-primary">Summera valda</button>
+    </form>
+
+    <!-- 🔥 Dolda Delete-formulär, utanför tabellen -->
+    @foreach (var session in Model)
+    {
+        <form id="del-@session.SessionId" asp-action="Delete" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@session.SessionId" />
+        </form>
+    }
 }
+
+@{
+    var q = ViewBag.Query as string;
+    var sort = ViewBag.Sort as string ?? "date";
+    bool desc = ViewBag.Desc is bool b && b;
+    int page = ViewBag.Page is int p ? p : 1;
+    int pageSize = ViewBag.PageSize is int s ? s : 20;
+    bool hasPrev = ViewBag.HasPrev is bool hp && hp;
+    bool hasNext = ViewBag.HasNext is bool hn && hn;
+    var instrumentId = ViewBag.InstrumentId as int?;
+    var instrumentIdValue = instrumentId?.ToString() ?? "";
+}
+
+<!-- 📄 Pagination -->
+<nav class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted">
+        Sida @(page) @if (hasNext) {
+        <text>(fler sidor finns)</text>
+                }
+    </div>
+
+    <div class="btn-group">
+        <a class="btn btn-outline-secondary @(hasPrev ? "" : "disabled")"
+           asp-action="Index"
+           asp-route-q="@(q)"
+           asp-route-instrumentId="@(instrumentIdValue)"
+           asp-route-sort="@(sort)"
+           asp-route-desc="@(desc)"
+           asp-route-page="@(page - 1)"
+           asp-route-pageSize="@(pageSize)">
+            ← Föregående
+        </a>
+
+        <a class="btn btn-outline-secondary @(hasNext ? "" : "disabled")"
+           asp-action="Index"
+           asp-route-q="@(q)"
+           asp-route-instrumentId="@(instrumentIdValue)"
+           asp-route-sort="@(sort)"
+           asp-route-desc="@(desc)"
+           asp-route-page="@(page + 1)"
+           asp-route-pageSize="@(pageSize)">
+            Nästa →
+        </a>
+    </div>
+</nav>

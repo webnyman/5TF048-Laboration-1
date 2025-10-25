@@ -10,7 +10,8 @@ namespace PracticeLogger.DAL
         Task<int> CreateAsync(PracticeSession s); // s.UserId ska redan vara satt
         Task<bool> UpdateAsync(Guid userId, PracticeSession s);
         Task<bool> DeleteAsync(Guid userId, int sessionId);
-        Task<PracticeSummary> GetSummaryAsync(Guid userId, int? instrumentId);
+        Task<PracticeSummary> GetSummaryAsync(Guid userId, int? instrumentId, DateTime? from = null, DateTime? to = null);
+        Task<PracticeSummary> GetSummaryByIdsAsync(Guid userId, IEnumerable<int> sessionIds);
     }
 
 

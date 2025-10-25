@@ -13,6 +13,39 @@
     </div>
 </div>
 
+@{
+    ViewData["Title"] = "Övningssummering";
+    var selectedInstrumentId = Context.Request.Query["instrumentId"].ToString();
+    var from = Context.Request.Query["from"].ToString();
+    var to = Context.Request.Query["to"].ToString();
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form method="get" asp-action="Summary" class="row g-3 align-items-end mb-4">
+    <div class="col-md-4">
+        <label for="instrumentId" class="form-label">Instrument</label>
+        <select id="instrumentId" name="instrumentId" class="form-select" asp-items="ViewBag.Instruments">
+            <option value="">(Alla instrument)</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <label for="from" class="form-label">Från</label>
+        <input type="date" id="from" name="from" class="form-control" value="@from" />
+    </div>
+
+    <div class="col-md-3">
+        <label for="to" class="form-label">Till</label>
+        <input type="date" id="to" name="to" class="form-control" value="@to" />
+    </div>
+
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Filtrera</button>
+    </div>
+</form>
+
+
 @if (ViewData["Info"] != null)
 {
     <div class="alert alert-info mt-3">@ViewData["Info"]</div>
