@@ -64,10 +64,34 @@ builder.Services.AddSingleton<IEmailSender, DevMailSender>();
 
 builder.Services.AddScoped<IRuleCoachService, RuleCoachService>();
 
+// 4) API
+builder.Services.AddControllers(); // utöver MVC Views
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// API versioning (enkelt upplägg)
+builder.Services.AddApiVersioning(o =>
+{
+    o.AssumeDefaultVersionWhenUnspecified = true;
+    o.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
+    o.ReportApiVersions = true;
+});
+
+// CORS – öppna för din klient under utveckling
+builder.Services.AddCors(o =>
+{
+    o.AddPolicy("Client", p => p
+        .WithOrigins("https://localhost:5173", "http://localhost:5173") // t.ex. Vite/React
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
+});
+
+
 
 var app = builder.Build();
 
-// 4) Felhantering
+// 5) Felhantering
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -78,7 +102,7 @@ else
     app.UseHsts();
 }
 
-// 5) Middleware-ordning
+// 6) Middleware-ordning
 // app.UseHttpsRedirection(); // valfritt
 app.UseStaticFiles();
 
@@ -88,7 +112,15 @@ app.UseSession();
 app.UseAuthentication();   // <-- före Authorization
 app.UseAuthorization();
 
-// 6) Endpoints
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+app.UseCors("Client");     // om du behöver CORS
+app.MapControllers();      // API-rutter
+
+// 7) Endpoints
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=PracticeSession}/{action=Index}/{id?}");
