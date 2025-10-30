@@ -26,7 +26,7 @@ namespace PracticeLogger.Controllers
         {
             var entries = GetEntries();
 
-            ViewBag.Week = System.Globalization.ISOWeek.GetWeekOfYear(DateTime.Today);
+            ViewBag.Week = ISOWeek.GetWeekOfYear(DateTime.Today);
             ViewData["Flash"] = TempData["Flash"];
 
             // Show last used instrument from cookie if available
