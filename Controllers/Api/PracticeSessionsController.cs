@@ -1,5 +1,6 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Mvc;
 using PracticeLogger.DAL;
 using PracticeLogger.Models;
@@ -7,6 +8,7 @@ using PracticeLogger.Models;
 namespace PracticeLogger.Controllers.Api
 {
     [ApiController]
+    [Authorize(AuthenticationSchemes = "ApiJwt")]
     [Route("api/[controller]")]
     [Authorize] // kräver inloggning
     public class PracticeSessionsController : ControllerBase
@@ -28,12 +30,21 @@ namespace PracticeLogger.Controllers.Api
             var sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
             return Guid.TryParse(sub, out userId);
         }
+    private Guid CurrentUserId()
+    {
+        // Försök hitta NameIdentifier-claim (vanligt för Identity-cookies)
+        var id = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                 // Om den saknas, prova "sub" (standard för JWT)
+                 ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-        private Guid CurrentUserId()
-            => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        if (string.IsNullOrWhiteSpace(id))
+            throw new InvalidOperationException("Ingen användar-id-claim hittades i token eller cookie.");
 
-        // GET api/practicesessions?q=&instrumentId=&sort=&desc=&page=&pageSize=
-        [HttpGet]
+        return Guid.Parse(id);
+    }
+
+    // GET api/practicesessions?q=&instrumentId=&sort=&desc=&page=&pageSize=
+    [HttpGet]
         public async Task<ActionResult<PagedResult<PracticeSessionListItemDto>>> GetList(
             [FromQuery] string? q,
             [FromQuery] int? instrumentId,
