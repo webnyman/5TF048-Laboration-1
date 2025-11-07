@@ -1,4 +1,6 @@
-﻿namespace PracticeLogger.Models
+﻿using PracticeLogger.Models.Api;
+
+namespace PracticeLogger.Models
 {
     public class PracticeSessionDto
     {
@@ -28,5 +30,6 @@
 
         public short? Reps { get; set; }
         public short? Errors { get; set; }
+        public IEnumerable<LinkDto>? Links { get; set; }
     }
 }

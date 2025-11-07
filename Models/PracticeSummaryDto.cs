@@ -1,4 +1,6 @@
-﻿namespace PracticeLogger.Models
+﻿using PracticeLogger.Models.Api;
+
+namespace PracticeLogger.Models
 {
     public class PracticeSummaryDto
     {
@@ -15,5 +17,6 @@
         public double? AvgTempoDelta { get; set; }
         public double? AvgMood { get; set; }
         public double? AvgEnergy { get; set; }
+        public IEnumerable<LinkDto>? Links { get; set; }
     }
 }

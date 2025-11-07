@@ -59,8 +59,6 @@ namespace PracticeLogger.Controllers.Api
 
             return new AuthResponseDto
             {
-                Token = token.TokenString,
-                ExpiresAt = token.ExpiresAt,
                 UserId = user.Id.ToString(),
                 DisplayName = user.DisplayName,
                 Email = user.Email,

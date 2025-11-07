@@ -1,4 +1,6 @@
-﻿namespace PracticeLogger.Models
+﻿using PracticeLogger.Models.Api;
+
+namespace PracticeLogger.Models
 {
     public class PracticeSessionListItemDto
     {
@@ -13,5 +15,6 @@
         public byte? PracticeType { get; set; }
         public string? Goal { get; set; }
         public bool Achieved { get; set; }
+        public IEnumerable<LinkDto>? Links { get; set; }
     }
 }

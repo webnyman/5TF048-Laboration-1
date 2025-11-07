@@ -1,16 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Mvc;
 using PracticeLogger.DAL;
 using PracticeLogger.Models;
+using PracticeLogger.Models.Api;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace PracticeLogger.Controllers.Api
 {
     [ApiController]
-    [Authorize(AuthenticationSchemes = "ApiJwt")]
     [Route("api/[controller]")]
-    [Authorize] // kräver inloggning
+    [Authorize(AuthenticationSchemes = "ApiJwt")] // JWT krävs som default
     public class PracticeSessionsController : ControllerBase
     {
         private readonly IPracticeSessionRepository _sessions;
@@ -24,28 +24,106 @@ namespace PracticeLogger.Controllers.Api
             _instruments = instruments;
         }
 
+        // === Hjälpmetoder =======================================================
+
         private bool TryGetUserId(out Guid userId)
         {
             userId = default;
-            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return Guid.TryParse(sub, out userId);
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            return Guid.TryParse(id, out userId);
         }
-    private Guid CurrentUserId()
-    {
-        // Försök hitta NameIdentifier-claim (vanligt för Identity-cookies)
-        var id = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                 // Om den saknas, prova "sub" (standard för JWT)
-                 ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-        if (string.IsNullOrWhiteSpace(id))
-            throw new InvalidOperationException("Ingen användar-id-claim hittades i token eller cookie.");
+        private Guid CurrentUserId()
+        {
+            if (!TryGetUserId(out var userId))
+                throw new InvalidOperationException("Ingen användar-id-claim hittades i token.");
 
-        return Guid.Parse(id);
-    }
+            return userId;
+        }
 
-    // GET api/practicesessions?q=&instrumentId=&sort=&desc=&page=&pageSize=
-    [HttpGet]
-        public async Task<ActionResult<PagedResult<PracticeSessionListItemDto>>> GetList(
+        private LinkDto Link(string rel, string href, string method)
+            => new LinkDto { Rel = rel, Href = href, Method = method };
+
+        private IEnumerable<LinkDto> BuildLinksForSession(int sessionId)
+        {
+            var links = new List<LinkDto>();
+
+            var self = Url.ActionLink(nameof(GetById), values: new { id = sessionId });
+            if (self != null) links.Add(Link("self", self, "GET"));
+
+            var update = Url.ActionLink(nameof(Update), values: new { id = sessionId });
+            if (update != null) links.Add(Link("update", update, "PUT"));
+
+            var delete = Url.ActionLink(nameof(Delete), values: new { id = sessionId });
+            if (delete != null) links.Add(Link("delete", delete, "DELETE"));
+
+            return links;
+        }
+
+        private IEnumerable<LinkDto> BuildCollectionLinks(
+            string? q,
+            int? instrumentId,
+            string sort,
+            bool desc,
+            int page,
+            int pageSize,
+            bool hasPrev,
+            bool hasNext)
+        {
+            var links = new List<LinkDto>();
+
+            var self = Url.ActionLink(nameof(GetList),
+                values: new { q, instrumentId, sort, desc, page, pageSize });
+            if (self != null) links.Add(Link("self", self, "GET"));
+
+            var create = Url.ActionLink(nameof(Create), values: null);
+            if (create != null) links.Add(Link("create", create, "POST"));
+
+            var summary = Url.ActionLink(nameof(Summary), values: new { instrumentId });
+            if (summary != null) links.Add(Link("summary", summary, "GET"));
+
+            if (hasPrev)
+            {
+                var prev = Url.ActionLink(nameof(GetList),
+                    values: new { q, instrumentId, sort, desc, page = page - 1, pageSize });
+                if (prev != null) links.Add(Link("prev", prev, "GET"));
+            }
+
+            if (hasNext)
+            {
+                var next = Url.ActionLink(nameof(GetList),
+                    values: new { q, instrumentId, sort, desc, page = page + 1, pageSize });
+                if (next != null) links.Add(Link("next", next, "GET"));
+            }
+
+            return links;
+        }
+
+        private IEnumerable<LinkDto> BuildLinksForSummary(int? instrumentId)
+        {
+            var links = new List<LinkDto>();
+
+            var self = Url.ActionLink(nameof(Summary), values: new { instrumentId });
+            if (self != null) links.Add(Link("self", self, "GET"));
+
+            var list = Url.ActionLink(nameof(GetList), values: null);
+            if (list != null) links.Add(Link("list", list, "GET"));
+
+            var selected = Url.ActionLink(nameof(SummarySelected), values: null);
+            if (selected != null) links.Add(Link("summarySelected", selected, "POST"));
+
+            return links;
+        }
+
+        // === ENDPOINTS ==========================================================
+
+        // GET api/practicesessions?q=&instrumentId=&sort=&desc=&page=&pageSize=
+        // OBS: tillåter anonymt anrop → ger "välkommen + länkar" om ej inloggad
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetList(
             [FromQuery] string? q,
             [FromQuery] int? instrumentId,
             [FromQuery] string? sort = "date",
@@ -53,13 +131,34 @@ namespace PracticeLogger.Controllers.Api
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
+            // 1) Inte inloggad → "onboarding"-HATEOAS
+            if (!(User.Identity?.IsAuthenticated ?? false))
+            {
+                var links = new List<LinkDto>();
+
+                var self = Url.ActionLink(nameof(GetList), values: null);
+                if (self != null) links.Add(Link("self", self, "GET"));
+
+                var register = Url.ActionLink("Register", "Auth", values: null);
+                if (register != null) links.Add(Link("register", register, "POST"));
+
+                var login = Url.ActionLink("Login", "Auth", values: null);
+                if (login != null) links.Add(Link("login", login, "POST"));
+
+                return Ok(new
+                {
+                    message = "Välkommen till PracticeLogger API. Autentisera dig eller registrera dig för att se dina övningspass.",
+                    links
+                });
+            }
+
+            // 2) Inloggad → riktig lista
             var userId = CurrentUserId();
 
             var items = await _sessions.SearchAsync(userId, q, instrumentId, sort ?? "date", desc, page, pageSize);
 
-            // OBS: SearchAsync returnerar bara "en sida". HasNext/HasPrev sätts enligt din logik:
             var hasPrev = page > 1;
-            var hasNext = items.Count() == pageSize; // enkel tumregel
+            var hasNext = items.Count() == pageSize;
 
             var mapped = items.Select(it => new PracticeSessionListItemDto
             {
@@ -72,10 +171,11 @@ namespace PracticeLogger.Controllers.Api
                 InstrumentName = it.InstrumentName,
                 PracticeType = it.PracticeType,
                 Goal = it.Goal,
-                Achieved = it.Achieved
+                Achieved = it.Achieved,
+                Links = BuildLinksForSession(it.SessionId)
             });
 
-            return Ok(new PagedResult<PracticeSessionListItemDto>
+            var result = new PagedResult<PracticeSessionListItemDto>
             {
                 Items = mapped,
                 Page = page,
@@ -85,16 +185,18 @@ namespace PracticeLogger.Controllers.Api
                 Sort = sort,
                 Desc = desc,
                 Query = q,
-                InstrumentId = instrumentId
-            });
+                InstrumentId = instrumentId,
+                Links = BuildCollectionLinks(q, instrumentId, sort ?? "date", desc, page, pageSize, hasPrev, hasNext)
+            };
+
+            return Ok(result);
         }
 
         // GET api/practicesessions/123
         [HttpGet("{id:int}")]
         public async Task<ActionResult<PracticeSessionDto>> GetById(int id)
         {
-            if (!TryGetUserId(out var userId))
-                return Unauthorized(new { error = "Not logged in. Supply auth cookie (or JWT) when calling the API." });
+            var userId = CurrentUserId();
 
             var s = await _sessions.GetAsync(userId, id);
             if (s == null) return NotFound();
@@ -122,7 +224,8 @@ namespace PracticeLogger.Controllers.Api
                 TempoEnd = s.TempoEnd,
                 Metronome = s.Metronome,
                 Reps = s.Reps,
-                Errors = s.Errors
+                Errors = s.Errors,
+                Links = BuildLinksForSession(s.SessionId)
             };
 
             return Ok(dto);
@@ -147,7 +250,7 @@ namespace PracticeLogger.Controllers.Api
                 Comment = req.Comment,
                 PracticeType = req.PracticeType,
                 Goal = req.Goal,
-                Achieved = req.Achieved ?? false, // Fix: hantera null-värde
+                Achieved = req.Achieved ?? false,
                 Mood = req.Mood,
                 Energy = req.Energy,
                 FocusScore = req.FocusScore,
@@ -159,7 +262,18 @@ namespace PracticeLogger.Controllers.Api
             };
 
             var newId = await _sessions.CreateAsync(s);
-            return CreatedAtAction(nameof(GetById), new { id = newId }, new { id = newId });
+
+            var selfUrl = Url.ActionLink(nameof(GetById), values: new { id = newId });
+
+            var dto = new
+            {
+                id = newId,
+                links = selfUrl != null
+                    ? BuildLinksForSession(newId)
+                    : Enumerable.Empty<LinkDto>()
+            };
+
+            return CreatedAtAction(nameof(GetById), new { id = newId }, dto);
         }
 
         // PUT api/practicesessions/123
@@ -182,7 +296,7 @@ namespace PracticeLogger.Controllers.Api
                 Comment = req.Comment,
                 PracticeType = req.PracticeType,
                 Goal = req.Goal,
-                Achieved = req.Achieved ?? false, // Fix: hantera null-värde
+                Achieved = req.Achieved ?? false,
                 Mood = req.Mood,
                 Energy = req.Energy,
                 FocusScore = req.FocusScore,
@@ -195,6 +309,9 @@ namespace PracticeLogger.Controllers.Api
 
             var ok = await _sessions.UpdateAsync(userId, s);
             if (!ok) return NotFound();
+
+            // NoContent med länkar i header är också möjligt,
+            // men enklast: bara 204.
             return NoContent();
         }
 
@@ -226,7 +343,8 @@ namespace PracticeLogger.Controllers.Api
                 PassWithTempo = s.PassWithTempo,
                 AvgTempoDelta = s.AvgTempoDelta,
                 AvgMood = s.AvgMood,
-                AvgEnergy = s.AvgEnergy
+                AvgEnergy = s.AvgEnergy,
+                Links = BuildLinksForSummary(instrumentId)
             };
             return Ok(dto);
         }
@@ -253,7 +371,8 @@ namespace PracticeLogger.Controllers.Api
                 PassWithTempo = s.PassWithTempo,
                 AvgTempoDelta = s.AvgTempoDelta,
                 AvgMood = s.AvgMood,
-                AvgEnergy = s.AvgEnergy
+                AvgEnergy = s.AvgEnergy,
+                Links = BuildLinksForSummary(null) // eller särskilt för "selected"
             };
             return Ok(dto);
         }
